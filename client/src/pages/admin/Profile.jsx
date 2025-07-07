@@ -1,33 +1,29 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import profileIcon from "/profileIcon.png";
 
 const AdminProfile = () => {
   const navigate = useNavigate();
 
-  // Admin specific data
+  // Simplified admin data without department and joinDate
   const userData = {
     name: "Admin User",
     email: "admin@laundryola.com",
     phone: "+8801234567890",
-    role: "Administrator",
-    emergencyContact: "+8801987654321",
-    address: "LaundryOla Head Office, Dhaka",
     employeeId: "ADM001",
-    department: "Operations",
-    joinDate: "2024-01-15"
+    address: "LaundryOla Head Office, Dhaka",
   };
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+
+  // Remove department from the profile data
   const [profileData, setProfileData] = useState({
     name: userData.name,
     email: userData.email,
     phone: userData.phone,
-    emergencyContact: userData.emergencyContact,
-    address: userData.address,
     employeeId: userData.employeeId,
-    department: userData.department
+    address: userData.address,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -39,21 +35,19 @@ const AdminProfile = () => {
   const handleEditProfile = () => setIsEditingProfile(true);
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
+    // Reset form data without department
     setProfileData({
       name: userData.name,
       email: userData.email,
       phone: userData.phone,
-      emergencyContact: userData.emergencyContact,
-      address: userData.address,
       employeeId: userData.employeeId,
-      department: userData.department
+      address: userData.address,
     });
   };
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
     console.log("Saving admin profile:", profileData);
-    // TODO: API call to save profile
     setIsEditingProfile(false);
     alert("Admin profile updated successfully!");
   };
@@ -82,8 +76,6 @@ const AdminProfile = () => {
       alert("Password must be at least 6 characters long!");
       return;
     }
-    console.log("Changing admin password for:", userData.email);
-    // TODO: API call to change password
     setIsChangingPassword(false);
     setPasswordData({
       currentPassword: "",
@@ -98,15 +90,15 @@ const AdminProfile = () => {
   };
 
   const handleLogout = () => {
-    console.log("Admin logging out...");
     navigate("/");
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm("Are you sure you want to delete your admin account? This action cannot be undone.")) {
-      console.log("Deleting admin account...");
-      // TODO: API call to delete account
-      alert("Admin account deleted successfully");
+    if (
+      window.confirm(
+        "Are you sure you want to delete your admin account? This action cannot be undone.",
+      )
+    ) {
       navigate("/");
     }
   };
@@ -136,7 +128,9 @@ const AdminProfile = () => {
                   />
                 </svg>
               </button>
-              <h1 className="text-2xl font-bold text-indigo-700">Admin Profile</h1>
+              <h1 className="text-2xl font-bold text-indigo-700">
+                Admin Profile
+              </h1>
             </div>
             <span className="text-sm text-gray-500">LaundryOla</span>
           </div>
@@ -150,10 +144,12 @@ const AdminProfile = () => {
             <div className="card-body">
               <div className="flex flex-col items-center space-y-4 md:flex-row md:space-y-0 md:space-x-6">
                 <div className="avatar">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100">
-                    <span className="text-3xl font-bold text-indigo-600">
-                      {profileData.name.charAt(0)}
-                    </span>
+                  <div className="h-24 w-24 rounded-full bg-indigo-100 p-2">
+                    <img
+                      src={profileIcon}
+                      alt="Admin Profile"
+                      className="h-full w-full object-contain"
+                    />
                   </div>
                 </div>
 
@@ -182,8 +178,18 @@ const AdminProfile = () => {
                     onClick={handleEditProfile}
                     className="btn btn-primary btn-sm"
                   >
-                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                     Edit Profile
                   </button>
@@ -207,7 +213,6 @@ const AdminProfile = () => {
 
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {/* Common Fields */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Full Name</span>
@@ -230,7 +235,9 @@ const AdminProfile = () => {
 
                   <div className="form-control flex flex-col">
                     <label className="label">
-                      <span className="label-text font-medium">Email Address</span>
+                      <span className="label-text font-medium">
+                        Email Address
+                      </span>
                     </label>
                     {isEditingProfile ? (
                       <input
@@ -250,7 +257,9 @@ const AdminProfile = () => {
 
                   <div className="form-control flex flex-col">
                     <label className="label">
-                      <span className="label-text font-medium">Phone Number</span>
+                      <span className="label-text font-medium">
+                        Phone Number
+                      </span>
                     </label>
                     {isEditingProfile ? (
                       <input
@@ -268,75 +277,20 @@ const AdminProfile = () => {
                     )}
                   </div>
 
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Emergency Contact</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="tel"
-                        className="input input-bordered"
-                        value={profileData.emergencyContact}
-                        onChange={(e) =>
-                          handleProfileInputChange("emergencyContact", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.emergencyContact}
-                      </p>
-                    )}
-                  </div>
-
                   {/* Admin-specific Fields */}
                   <div className="form-control flex flex-col">
                     <label className="label">
-                      <span className="label-text font-medium">Employee ID</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={profileData.employeeId}
-                        onChange={(e) =>
-                          handleProfileInputChange("employeeId", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.employeeId}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Department</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={profileData.department}
-                        onChange={(e) =>
-                          handleProfileInputChange("department", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.department}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Join Date</span>
+                      <span className="label-text font-medium">
+                        Employee ID
+                      </span>
                     </label>
                     <p className="rounded-lg bg-gray-50 px-4 py-3">
-                      {new Date(userData.joinDate).toLocaleDateString()}
+                      {profileData.employeeId}
                     </p>
                   </div>
+
+                  {/* Department field removed */}
+                  {/* Join Date field removed */}
                 </div>
 
                 <div className="form-control flex flex-col">
@@ -371,8 +325,18 @@ const AdminProfile = () => {
                     onClick={handleChangePassword}
                     className="btn btn-outline btn-sm"
                   >
-                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
                     </svg>
                     Change Password
                   </button>
@@ -399,7 +363,9 @@ const AdminProfile = () => {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">Current Password *</span>
+                        <span className="label-text font-medium">
+                          Current Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -407,14 +373,19 @@ const AdminProfile = () => {
                         placeholder="Enter current password"
                         value={passwordData.currentPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("currentPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "currentPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
 
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">New Password *</span>
+                        <span className="label-text font-medium">
+                          New Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -422,14 +393,19 @@ const AdminProfile = () => {
                         placeholder="Enter new password"
                         value={passwordData.newPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("newPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "newPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
 
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">Confirm Password *</span>
+                        <span className="label-text font-medium">
+                          Confirm Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -437,7 +413,10 @@ const AdminProfile = () => {
                         placeholder="Confirm new password"
                         value={passwordData.confirmPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("confirmPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "confirmPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
@@ -467,20 +446,40 @@ const AdminProfile = () => {
                   onClick={handleLogout}
                   className="btn btn-outline w-full justify-start"
                 >
-                  <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <svg
+                    className="mr-3 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
                   </svg>
                   Logout
                 </button>
 
                 <div className="divider"></div>
 
-                <button 
+                <button
                   onClick={handleDeleteAccount}
                   className="btn btn-error btn-outline w-full justify-start"
                 >
-                  <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="mr-3 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   Delete Account
                 </button>

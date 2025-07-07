@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { mockUser } from "../../data/services";
+import profileIcon from "/profileIcon.png"; // Add this import
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
@@ -28,10 +29,13 @@ const CustomerDashboard = () => {
                   role="button"
                   className="btn btn-ghost btn-circle avatar"
                 >
-                  <div className="flex w-10 items-center justify-center rounded-full bg-indigo-100">
-                    <span className="font-semibold text-indigo-600">
-                      {mockUser.name.charAt(0)}
-                    </span>
+                  {/* Replace text-based avatar with image */}
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 p-1">
+                    <img
+                      src={profileIcon}
+                      alt="Profile"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                 </div>
                 <ul
@@ -53,15 +57,8 @@ const CustomerDashboard = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="mb-2 text-3xl font-bold text-gray-800">
-            Welcome back, {mockUser.name}!
-          </h2>
-          <p className="text-gray-600">What would you like to do today?</p>
-        </div>
-
-        {/* Main Action Buttons */}
-        <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
+        {/* Main Action Buttons - 2-column grid */}
+        <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
           <button
             onClick={() => navigate("/customer/new-order")}
             className="btn btn-primary btn-lg h-32 flex-col py-8 text-lg"
@@ -100,26 +97,6 @@ const CustomerDashboard = () => {
               />
             </svg>
             My Orders
-          </button>
-
-          <button
-            onClick={() => navigate("/customer/profile")}
-            className="btn btn-outline btn-lg h-32 flex-col py-8 text-lg"
-          >
-            <svg
-              className="mb-3 h-12 w-12"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            Profile
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom"; // Add this import
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   return (
@@ -7,9 +7,12 @@ const LandingPage = () => {
       {/* Header */}
       <header className="bg-base-100 p-4 shadow-md">
         <div className="container mx-auto flex items-center">
-          <h1 className="text-2xl font-extrabold tracking-wide text-indigo-700">
-            LaundryOla
-          </h1>
+          {/* Replacing logo with text */}
+          <div className="flex items-center">
+            <h1 className="text-2xl font-extrabold tracking-wide text-indigo-700">
+              LaundryOla
+            </h1>
+          </div>
           <nav className="ml-auto flex space-x-4">
             <Link
               to="/signin"

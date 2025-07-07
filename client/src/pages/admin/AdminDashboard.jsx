@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockOrders } from "../../data/services";
+import profileIcon from "/profileIcon.png"; // Add profileIcon import
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -79,19 +80,40 @@ const AdminDashboard = () => {
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-indigo-700">
-                LaundryOla Admin - Orders Management
-              </h1>
-            </div>
+            <h1 className="text-2xl font-bold text-indigo-700">
+              LaundryOla Admin
+            </h1>
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="font-semibold text-gray-800">Admin User</p>
                 <p className="text-sm text-gray-500">admin@laundryola.com</p>
               </div>
-              <button onClick={handleLogout} className="btn btn-outline btn-sm">
-                Logout
-              </button>
+              <div className="dropdown dropdown-end">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-ghost btn-circle avatar"
+                >
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 p-1">
+                    <img
+                      src={profileIcon}
+                      alt="Profile"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
+                >
+                  <li>
+                    <a onClick={() => navigate("/admin/profile")}>Profile</a>
+                  </li>
+                  <li>
+                    <a onClick={handleLogout}>Logout</a>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -99,110 +121,107 @@ const AdminDashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         {/* Orders Table */}
-        <div className="card bg-white shadow-lg">
-          <div className="card-body">
-            <h3 className="card-title mb-6 text-xl">All Orders</h3>
-
-            <div className="overflow-x-auto">
-              <table className="table-zebra table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Pickup Date</th>
-                    <th>Delivery Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="font-semibold">{order.id}</td>
-                      <td>{order.customer}</td>
-                      <td className="text-sm">{order.phone}</td>
-                      <td>
-                        <span
-                          className={`badge ${getStatusColor(order.status)}`}
+        <div className="card bg-white p-6 shadow-lg">
+          {" "}
+          {/* Added padding here */}
+          <h3 className="mb-6 text-xl font-bold">Orders Management</h3>
+          <div className="overflow-x-auto">
+            <table className="table-zebra table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Pickup Date</th>
+                  <th>Delivery Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="font-semibold">{order.id}</td>
+                    <td>{order.customer}</td>
+                    <td className="text-sm">{order.phone}</td>
+                    <td>
+                      <span className={`badge ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="font-semibold">৳{order.total}</td>
+                    <td className="text-sm">{formatDate(order.pickupDate)}</td>
+                    <td className="text-sm">
+                      {formatDate(order.deliveryDate)}
+                    </td>
+                    <td>
+                      <div className="dropdown dropdown-end">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-xs btn-primary"
                         >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="font-semibold">৳{order.total}</td>
-                      <td className="text-sm">
-                        {formatDate(order.pickupDate)}
-                      </td>
-                      <td className="text-sm">
-                        {formatDate(order.deliveryDate)}
-                      </td>
-                      <td>
-                        {order.status !== "Completed" ? (
-                          <div className="dropdown dropdown-end">
-                            <div
-                              tabIndex={0}
-                              role="button"
-                              className="btn btn-xs btn-primary"
+                          Update Status
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu rounded-box bg-base-100 z-[9999] w-52 border border-gray-200 p-2 shadow-lg"
+                        >
+                          <li className="mb-1">
+                            <a
+                              onClick={() =>
+                                handleStatusChange(order.id, "Pending")
+                              }
+                              className="flex items-center hover:bg-amber-50"
                             >
-                              Update Status
-                            </div>
-                            <ul
-                              tabIndex={0}
-                              className="dropdown-content menu bg-base-100 rounded-box z-[1] w-48 p-2 shadow"
+                              <span className="badge badge-warning mr-2"></span>
+                              Pending
+                            </a>
+                          </li>
+                          <li className="mb-1">
+                            <a
+                              onClick={() =>
+                                handleStatusChange(order.id, "In Progress")
+                              }
+                              className="flex items-center hover:bg-blue-50"
                             >
-                              <li>
-                                <a
-                                  onClick={() =>
-                                    handleStatusChange(order.id, "Pending")
-                                  }
-                                >
-                                  Pending
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  onClick={() =>
-                                    handleStatusChange(order.id, "In Progress")
-                                  }
-                                >
-                                  In Progress
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      order.id,
-                                      "Ready for Delivery",
-                                    )
-                                  }
-                                >
-                                  Ready for Delivery
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  onClick={() =>
-                                    handleStatusChange(order.id, "Completed")
-                                  }
-                                >
-                                  Completed
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">
-                            Order Complete
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                              <span className="badge badge-info mr-2"></span>
+                              In Progress
+                            </a>
+                          </li>
+                          <li className="mb-1">
+                            <a
+                              onClick={() =>
+                                handleStatusChange(
+                                  order.id,
+                                  "Ready for Delivery",
+                                )
+                              }
+                              className="flex items-center hover:bg-green-50"
+                            >
+                              <span className="badge badge-success mr-2"></span>
+                              Ready for Delivery
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              onClick={() =>
+                                handleStatusChange(order.id, "Completed")
+                              }
+                              className="flex items-center hover:bg-gray-100"
+                            >
+                              <span className="badge badge-neutral mr-2"></span>
+                              Completed
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

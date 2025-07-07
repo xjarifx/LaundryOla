@@ -1,35 +1,29 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import profileIcon from "/profileIcon.png"; // Updated import path
 
 const DeliveryProfile = () => {
   const navigate = useNavigate();
 
-  // Delivery agent specific data
+  // Simplified delivery agent data
   const userData = {
     name: "Delivery Agent",
     email: "agent@laundryola.com",
     phone: "+8801234567890",
-    role: "Delivery Agent",
-    emergencyContact: "+8801987654321",
-    address: "Gulshan, Dhaka",
     agentId: "DA001",
-    vehicleNumber: "DHK-1234",
-    licenseNumber: "DL123456789",
-    joinDate: "2024-03-10"
+    address: "123 Delivery Lane, Gulshan, Dhaka", // Added address
   };
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+
+  // Add address to the profile data
   const [profileData, setProfileData] = useState({
     name: userData.name,
     email: userData.email,
     phone: userData.phone,
-    emergencyContact: userData.emergencyContact,
-    address: userData.address,
     agentId: userData.agentId,
-    vehicleNumber: userData.vehicleNumber,
-    licenseNumber: userData.licenseNumber
+    address: userData.address, // Added address field
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -41,22 +35,19 @@ const DeliveryProfile = () => {
   const handleEditProfile = () => setIsEditingProfile(true);
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
+    // Reset to essential fields including address
     setProfileData({
       name: userData.name,
       email: userData.email,
       phone: userData.phone,
-      emergencyContact: userData.emergencyContact,
-      address: userData.address,
       agentId: userData.agentId,
-      vehicleNumber: userData.vehicleNumber,
-      licenseNumber: userData.licenseNumber
+      address: userData.address, // Added address
     });
   };
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
     console.log("Saving delivery agent profile:", profileData);
-    // TODO: API call to save profile
     setIsEditingProfile(false);
     alert("Delivery agent profile updated successfully!");
   };
@@ -85,8 +76,6 @@ const DeliveryProfile = () => {
       alert("Password must be at least 6 characters long!");
       return;
     }
-    console.log("Changing delivery agent password for:", userData.email);
-    // TODO: API call to change password
     setIsChangingPassword(false);
     setPasswordData({
       currentPassword: "",
@@ -101,15 +90,15 @@ const DeliveryProfile = () => {
   };
 
   const handleLogout = () => {
-    console.log("Delivery agent logging out...");
     navigate("/");
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm("Are you sure you want to delete your delivery agent account? This action cannot be undone.")) {
-      console.log("Deleting delivery agent account...");
-      // TODO: API call to delete account
-      alert("Delivery agent account deleted successfully");
+    if (
+      window.confirm(
+        "Are you sure you want to delete your delivery agent account? This action cannot be undone.",
+      )
+    ) {
       navigate("/");
     }
   };
@@ -153,10 +142,12 @@ const DeliveryProfile = () => {
             <div className="card-body">
               <div className="flex flex-col items-center space-y-4 md:flex-row md:space-y-0 md:space-x-6">
                 <div className="avatar">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100">
-                    <span className="text-3xl font-bold text-indigo-600">
-                      {profileData.name.charAt(0)}
-                    </span>
+                  <div className="h-24 w-24 rounded-full bg-indigo-100 p-2">
+                    <img
+                      src={profileIcon}
+                      alt="Delivery Agent Profile"
+                      className="h-full w-full object-contain"
+                    />
                   </div>
                 </div>
 
@@ -167,8 +158,9 @@ const DeliveryProfile = () => {
                   <p className="text-gray-600">{profileData.email}</p>
                   <p className="text-gray-600">{profileData.phone}</p>
                   <div className="mt-2 flex flex-wrap justify-center gap-2 md:justify-start">
-                    <span className="badge badge-secondary">Delivery Agent</span>
-                    <span className="badge badge-outline">Active</span>
+                    <span className="badge badge-secondary">
+                      Delivery Agent
+                    </span>
                   </div>
                 </div>
               </div>
@@ -185,8 +177,18 @@ const DeliveryProfile = () => {
                     onClick={handleEditProfile}
                     className="btn btn-primary btn-sm"
                   >
-                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                     Edit Profile
                   </button>
@@ -210,7 +212,7 @@ const DeliveryProfile = () => {
 
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {/* Common Fields */}
+                  {/* Name */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Full Name</span>
@@ -231,9 +233,12 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
+                  {/* Email */}
                   <div className="form-control flex flex-col">
                     <label className="label">
-                      <span className="label-text font-medium">Email Address</span>
+                      <span className="label-text font-medium">
+                        Email Address
+                      </span>
                     </label>
                     {isEditingProfile ? (
                       <input
@@ -251,9 +256,12 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
+                  {/* Phone */}
                   <div className="form-control flex flex-col">
                     <label className="label">
-                      <span className="label-text font-medium">Phone Number</span>
+                      <span className="label-text font-medium">
+                        Phone Number
+                      </span>
                     </label>
                     {isEditingProfile ? (
                       <input
@@ -271,27 +279,7 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Emergency Contact</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="tel"
-                        className="input input-bordered"
-                        value={profileData.emergencyContact}
-                        onChange={(e) =>
-                          handleProfileInputChange("emergencyContact", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.emergencyContact}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Delivery Agent-specific Fields */}
+                  {/* Agent ID */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Agent ID</span>
@@ -300,57 +288,9 @@ const DeliveryProfile = () => {
                       {profileData.agentId}
                     </p>
                   </div>
-                  
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Vehicle Number</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={profileData.vehicleNumber}
-                        onChange={(e) =>
-                          handleProfileInputChange("vehicleNumber", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.vehicleNumber}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">License Number</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={profileData.licenseNumber}
-                        onChange={(e) =>
-                          handleProfileInputChange("licenseNumber", e.target.value)
-                        }
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.licenseNumber}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Join Date</span>
-                    </label>
-                    <p className="rounded-lg bg-gray-50 px-4 py-3">
-                      {new Date(userData.joinDate).toLocaleDateString()}
-                    </p>
-                  </div>
                 </div>
 
+                {/* Address - Added for all profile types */}
                 <div className="form-control flex flex-col">
                   <label className="label">
                     <span className="label-text font-medium">Address</span>
@@ -383,8 +323,18 @@ const DeliveryProfile = () => {
                     onClick={handleChangePassword}
                     className="btn btn-outline btn-sm"
                   >
-                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
                     </svg>
                     Change Password
                   </button>
@@ -411,7 +361,9 @@ const DeliveryProfile = () => {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">Current Password *</span>
+                        <span className="label-text font-medium">
+                          Current Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -419,14 +371,19 @@ const DeliveryProfile = () => {
                         placeholder="Enter current password"
                         value={passwordData.currentPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("currentPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "currentPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
 
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">New Password *</span>
+                        <span className="label-text font-medium">
+                          New Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -434,14 +391,19 @@ const DeliveryProfile = () => {
                         placeholder="Enter new password"
                         value={passwordData.newPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("newPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "newPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
 
                     <div className="form-control flex flex-col">
                       <label className="label">
-                        <span className="label-text font-medium">Confirm Password *</span>
+                        <span className="label-text font-medium">
+                          Confirm Password *
+                        </span>
                       </label>
                       <input
                         type="password"
@@ -449,7 +411,10 @@ const DeliveryProfile = () => {
                         placeholder="Confirm new password"
                         value={passwordData.confirmPassword}
                         onChange={(e) =>
-                          handlePasswordInputChange("confirmPassword", e.target.value)
+                          handlePasswordInputChange(
+                            "confirmPassword",
+                            e.target.value,
+                          )
                         }
                       />
                     </div>
@@ -479,20 +444,40 @@ const DeliveryProfile = () => {
                   onClick={handleLogout}
                   className="btn btn-outline w-full justify-start"
                 >
-                  <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <svg
+                    className="mr-3 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
                   </svg>
                   Logout
                 </button>
 
                 <div className="divider"></div>
 
-                <button 
+                <button
                   onClick={handleDeleteAccount}
                   className="btn btn-error btn-outline w-full justify-start"
                 >
-                  <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="mr-3 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   Delete Account
                 </button>
