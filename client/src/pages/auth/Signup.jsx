@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom"; // Add these imports
 
 const Signup = () => {
+  const navigate = useNavigate(); // Add this
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
@@ -10,7 +12,15 @@ const Signup = () => {
   const handleSignup = (e) => {
     e.preventDefault();
     console.log({ name, phone, role, email, password });
-    // TODO: backend API call
+
+    // Route based on selected role
+    if (role === "admin") {
+      navigate("/admin/dashboard");
+    } else if (role === "delivery") {
+      navigate("/delivery/dashboard");
+    } else {
+      navigate("/customer/dashboard");
+    }
   };
 
   return (
@@ -117,9 +127,9 @@ const Signup = () => {
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <a href="/signin" className="text-indigo-600 hover:underline">
+          <Link to="/signin" className="text-indigo-600 hover:underline">
             Signin
-          </a>
+          </Link>
         </p>
       </div>
     </div>

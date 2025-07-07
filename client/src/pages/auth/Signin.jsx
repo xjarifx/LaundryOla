@@ -1,13 +1,23 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom"; // Add these imports
 
 const Signin = () => {
+  const navigate = useNavigate(); // Add this
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
     console.log("Logging in:", { email, password });
-    // TODO: backend API call
+
+    // Simple routing based on email (mock logic)
+    if (email.includes("admin")) {
+      navigate("/admin/dashboard");
+    } else if (email.includes("delivery")) {
+      navigate("/delivery/dashboard");
+    } else {
+      navigate("/customer/dashboard");
+    }
   };
 
   return (
@@ -61,10 +71,10 @@ const Signin = () => {
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-indigo-600 hover:underline">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-indigo-600 hover:underline">
             Register
-          </a>
+          </Link>
         </p>
       </div>
     </div>

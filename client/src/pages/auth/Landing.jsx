@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom"; // Add this import
 
 const LandingPage = () => {
   return (
@@ -10,15 +11,15 @@ const LandingPage = () => {
             LaundryOla
           </h1>
           <nav className="ml-auto flex space-x-4">
-            <a
-              href="/signin"
+            <Link
+              to="/signin"
               className="btn btn-ghost btn-sm text-indigo-600 hover:bg-indigo-100"
             >
               Sign In
-            </a>
-            <a href="/signup" className="btn btn-primary btn-sm">
+            </Link>
+            <Link to="/signup" className="btn btn-primary btn-sm">
               Create Account
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
@@ -34,18 +35,18 @@ const LandingPage = () => {
           hassle-free.
         </p>
         <div className="flex flex-col justify-center gap-6 sm:flex-row">
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="btn btn-primary btn-lg px-12 py-4 font-semibold"
           >
             Get Started Now
-          </a>
-          <a
-            href="/signin"
+          </Link>
+          <Link
+            to="/signin"
             className="btn btn-outline btn-lg px-12 py-4 font-semibold text-indigo-600"
           >
             Already a User? Sign In
-          </a>
+          </Link>
         </div>
       </main>
 
