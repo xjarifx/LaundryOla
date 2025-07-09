@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { services } from "../../data/services";
 
 const NewOrder = () => {
   const navigate = useNavigate();
+  
+  // Add services state
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // State for selected services
   const [selectedServices, setSelectedServices] = useState([]);
@@ -100,7 +103,8 @@ const NewOrder = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleOrderSubmit = (e) => {
+  // Update handleOrderSubmit to use API
+  const handleOrderSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -108,26 +112,78 @@ const NewOrder = () => {
     }
 
     const orderData = {
-      ...orderForm,
+      customerName: orderForm.customerName,
+      phone: orderForm.phone,
+      address: orderForm.address,
+      pickupDate: orderForm.pickupDate,
+      pickupTime: orderForm.pickupTime,
+      instructions: orderForm.instructions,
       services: selectedServices,
-      total: getOrderTotal(),
-      orderDate: new Date().toISOString(),
-      status: 'Pending'
+      total: getOrderTotal()
     };
 
-    console.log("New order submitted:", orderData);
-    
-    // TODO: Submit to backend API
-    
-    // Show success message and redirect
-    alert(`Order placed successfully! Total: ৳${getOrderTotal()}`);
-    navigate("/customer/dashboard");
+    try {
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Order placed successfully! Order ID: ${data.data.orderId}`);
+        navigate("/customer/dashboard");
+      } else {
+        alert('Failed to place order: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      alert('Error placing order. Please try again.');
+    }
   };
 
   const getServiceQuantity = (serviceId) => {
     const service = selectedServices.find(s => s.id === serviceId);
     return service ? service.quantity : '';
   };
+
+  // Add useEffect to fetch services
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/services');
+      const data = await response.json();
+      
+      if (data.success) {
+        setServices(data.data);
+      } else {
+        console.error('Failed to fetch services:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add loading state to render
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg text-primary"></div>
+          <p className="mt-2 text-gray-600">Loading services...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-200">

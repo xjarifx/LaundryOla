@@ -1,10 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockOrders } from "../../data/services";
 
 const Orders = () => {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Fetch orders from API
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/orders");
+      const data = await response.json();
+
+      if (data.success) {
+        setOrders(data.data);
+      } else {
+        console.error("Failed to fetch orders:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -25,7 +49,7 @@ const Orders = () => {
     switch (stage) {
       case "Picked Up":
         return 25;
-      case "Washing":
+      case "Processing":
         return 50;
       case "Ready":
         return 75;
@@ -43,6 +67,18 @@ const Orders = () => {
       day: "numeric",
     });
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-base-200 flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg text-primary"></div>
+          <p className="mt-2 text-gray-600">Loading your orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-base-200 min-h-screen">
@@ -79,7 +115,7 @@ const Orders = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {/* Orders List */}
-          {mockOrders.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="card bg-white shadow-lg">
               <div className="card-body py-16 text-center">
                 <svg
@@ -111,7 +147,7 @@ const Orders = () => {
               </div>
             </div>
           ) : (
-            mockOrders.map((order) => (
+            orders.map((order) => (
               <div
                 key={order.id}
                 className="card bg-white shadow-lg transition-shadow hover:shadow-xl"
