@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from "../../config/api.js";
 
 const Signin = () => {
   const navigate = useNavigate();
@@ -10,11 +11,11 @@ const Signin = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSignin = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -22,9 +23,7 @@ const Signin = () => {
       const data = await response.json();
       if (data.success) {
         localStorage.setItem("token", data.data.token);
-        // Optionally store user info
         localStorage.setItem("user", JSON.stringify(data.data.user));
-        // Redirect based on role
         const role = data.data.user.role;
         if (role === "admin") navigate("/admin/dashboard");
         else if (role === "delivery") navigate("/delivery/dashboard");
@@ -41,10 +40,10 @@ const Signin = () => {
     <div className="bg-base-200 flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
         <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
-          Login to Laundry Service
+          Welcome Back
         </h2>
         {error && <div className="alert alert-error mb-4">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSignin} className="space-y-6">
           <div className="form-control flex flex-col">
             <label className="label">
               <span className="label-text font-semibold text-gray-700">
@@ -54,14 +53,13 @@ const Signin = () => {
             <input
               type="email"
               name="email"
-              className="input input-bordered w-full"
               placeholder="you@example.com"
+              className="input input-bordered w-full"
               value={form.email}
               required
               onChange={handleChange}
             />
           </div>
-
           <div className="form-control flex flex-col">
             <label className="label">
               <span className="label-text font-semibold text-gray-700">
@@ -71,29 +69,21 @@ const Signin = () => {
             <input
               type="password"
               name="password"
-              className="input input-bordered w-full"
               placeholder="••••••••"
+              className="input input-bordered w-full"
               value={form.password}
               required
               onChange={handleChange}
             />
-            <a
-              href="/forgot-password"
-              className="mt-1 self-end text-sm text-indigo-600 hover:underline"
-            >
-              Forgot password?
-            </a>
           </div>
-
           <button type="submit" className="btn btn-primary w-full">
-            Signin
+            Sign In
           </button>
         </form>
-
         <p className="mt-4 text-center text-sm text-gray-600">
           Don't have an account?{" "}
           <Link to="/signup" className="text-indigo-600 hover:underline">
-            Register
+            Sign Up
           </Link>
         </p>
       </div>

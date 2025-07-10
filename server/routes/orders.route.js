@@ -256,6 +256,77 @@ router.patch(
   }
 );
 
+// PUT /api/orders/status - Update order status (PROTECTED: admin)
+router.put(
+  "/status",
+  authenticateToken,
+  authorizeRole("admin"),
+  async (req, res) => {
+    try {
+      const { orderId, status } = req.body;
+
+      // Allowed statuses
+      const allowedStatuses = [
+        "Pending",
+        "In Progress",
+        "Ready for Delivery",
+        "Completed",
+        "Cancelled",
+      ];
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status value",
+        });
+      }
+
+      // Check if order exists
+      const [orders] = await pool.execute(
+        "SELECT * FROM orders WHERE order_id = ?",
+        [orderId]
+      );
+      if (orders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      // Update status
+      await pool.execute("UPDATE orders SET status = ? WHERE order_id = ?", [
+        status,
+        orderId,
+      ]);
+
+      // Fetch updated order
+      const [updatedOrders] = await pool.execute(
+        "SELECT order_id, status, total_amount, pickup_date, delivery_date FROM orders WHERE order_id = ?",
+        [orderId]
+      );
+
+      res.json({
+        success: true,
+        message: "Order status updated successfully",
+        data: {
+          orderId: updatedOrders[0].order_id,
+          status: updatedOrders[0].status,
+          total: parseFloat(updatedOrders[0].total_amount),
+          pickupDate: updatedOrders[0].pickup_date,
+          deliveryDate: updatedOrders[0].delivery_date,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update order status",
+        error: error.message,
+      });
+    }
+  }
+);
+
 // GET /api/orders/all - Get all orders for admin (PROTECTED: admin only)
 router.get(
   "/all",

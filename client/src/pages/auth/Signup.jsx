@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from "../../config/api.js";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const Signup = () => {
     role: "",
     email: "",
     password: "",
-    address: "", // Add address field
+    address: "",
   });
   const [error, setError] = useState("");
 
@@ -21,7 +22,6 @@ const Signup = () => {
     e.preventDefault();
     setError("");
     
-    // Create the payload - only include address if role is customer
     const payload = {
       name: form.name,
       phone: form.phone,
@@ -30,13 +30,12 @@ const Signup = () => {
       password: form.password,
     };
 
-    // Only add address for customers
     if (form.role === "customer") {
       payload.address = form.address;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

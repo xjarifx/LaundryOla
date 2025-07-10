@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import API_BASE_URL from "../../config/api.js";
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ const NewOrder = () => {
     try {
       setSubmitting(true);
       const token = localStorage.getItem("token");
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ const NewOrder = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/services');
+      const response = await fetch(`${API_BASE_URL}/api/services`);
       const data = await response.json();
       
       if (data.success) {
@@ -418,35 +419,4 @@ const NewOrder = () => {
                   <textarea 
                     className="textarea textarea-bordered h-20"
                     placeholder="Any special care instructions for your clothes"
-                    value={orderForm.instructions}
-                    onChange={(e) => setOrderForm({...orderForm, instructions: e.target.value})}
-                  ></textarea>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => navigate("/customer/dashboard")}
-                    className="btn btn-outline flex-1"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary flex-1"
-                    disabled={selectedServices.length === 0 || !user.address}
-                  >
-                    {!user.address ? 'Add Address First' : `Place Order - ৳${getOrderTotal().toFixed(0)}`}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default NewOrder;
+       

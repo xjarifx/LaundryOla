@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { testConnection } from "./config/database.config.js";
 import servicesRoutes from "./routes/services.route.js";
 import ordersRoutes from "./routes/orders.route.js";
-import authRoutes from "./routes/auth.route.js"; // Add this line
+import authRoutes from "./routes/auth.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -12,11 +12,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Enhanced CORS configuration
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      process.env.CLIENT_URL,
+      "http://localhost:5173",
+      "https://laundry-ola-three.vercel.app",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -24,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/api/auth", authRoutes); // Add this line
+app.use("/api/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/orders", ordersRoutes);
 
@@ -36,6 +42,8 @@ app.get("/", (req, res) => {
     database: "Connected to Aiven MySQL",
     endpoints: [
       "GET /api/health",
+      "POST /api/auth/register",
+      "POST /api/auth/login",
       "GET /api/services",
       "POST /api/orders",
       "GET /api/orders",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/api.js";
 
 const DeliveryDashboard = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const DeliveryDashboard = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/orders/delivery-available",
+        `${API_BASE_URL}/api/orders/delivery-available`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -68,7 +69,7 @@ const DeliveryDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/orders/${order.id}/accept`,
+        `${API_BASE_URL}/api/orders/${order.id}/accept`,
         {
           method: "PATCH",
           headers: {
@@ -112,7 +113,7 @@ const DeliveryDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/release`,
+        `${API_BASE_URL}/api/orders/${orderId}/release`,
         {
           method: "PATCH",
           headers: {
@@ -154,7 +155,7 @@ const DeliveryDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/complete`,
+        `${API_BASE_URL}/api/orders/${orderId}/complete`,
         {
           method: "PATCH",
           headers: {

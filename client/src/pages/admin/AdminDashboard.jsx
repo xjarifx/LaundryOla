@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
+import API_BASE_URL from "../../config/api.js";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/orders/all", {
+      const response = await fetch(`${API_BASE_URL}/api/orders/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -55,34 +56,28 @@ const AdminDashboard = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
+      const response = await fetch(`${API_BASE_URL}/api/orders/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
       const data = await response.json();
       if (data.success) {
-        // Update only the specific order in state instead of refetching all orders
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order.id === orderId ? { ...order, status: newStatus } : order,
           ),
         );
 
-        // Show success toast
         setToast({
           type: "success",
           message: `Order ${orderId} updated to ${newStatus}`,
         });
-        setTimeout(() => setToast(null), 3000); // Auto-hide after 3 seconds
+        setTimeout(() => setToast(null), 3000);
 
-        // Close the dropdown automatically
         document.activeElement.blur();
       } else {
         console.error("Failed to update status:", data.message);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/api.js";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -66,7 +67,7 @@ const Orders = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        `${API_BASE_URL}/api/orders/${orderId}/cancel`,
         {
           method: "PATCH",
           headers: {

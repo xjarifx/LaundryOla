@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
+import API_BASE_URL from "../../config/api.js";
 
 const CustomerProfile = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const CustomerProfile = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/profile", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -112,7 +113,7 @@ const CustomerProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/auth/change-password",
+        `${API_BASE_URL}/api/auth/change-password`,
         {
           method: "PUT",
           headers: {
@@ -166,7 +167,7 @@ const CustomerProfile = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:5000/api/auth/delete-account",
+          `${API_BASE_URL}/api/auth/delete-account`,
           {
             method: "DELETE",
             headers: {
@@ -460,8 +461,7 @@ const CustomerProfile = () => {
                       ) : (
                         "Update Password"
                       )}
-                    </button>
-                  </div>
+                    </div>
                 )}
               </div>
 
