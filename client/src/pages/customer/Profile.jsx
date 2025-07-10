@@ -1,81 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import profileIcon from "../../../public/profileIcon.png"; // Add this import
+import profileIcon from "/profileIcon.png";
 
-const Profile = ({ userType = "customer" }) => {
+const CustomerProfile = () => {
   const navigate = useNavigate();
-
-  // Mock data that would come from backend based on user type
-  const getUserData = (type) => {
-    switch (type) {
-      case "admin":
-        return {
-          name: "Admin User",
-          email: "admin@laundryola.com",
-          phone: "+8801234567890",
-          role: "Administrator",
-          emergencyContact: "+8801987654321",
-          address: "LaundryOla Head Office, Dhaka",
-          badge: "Administrator",
-          badgeColor: "badge-primary",
-          dashboardRoute: "/admin/dashboard",
-          profileRoute: "/admin/profile",
-          additionalFields: {
-            employeeId: "ADM001",
-            department: "Operations",
-            joinDate: "2024-01-15",
-          },
-        };
-      case "delivery":
-        return {
-          name: "Delivery Agent",
-          email: "agent@laundryola.com",
-          phone: "+8801234567890",
-          role: "Delivery Agent",
-          emergencyContact: "+8801987654321",
-          address: "Gulshan, Dhaka",
-          badge: "Delivery Agent",
-          badgeColor: "badge-secondary",
-          dashboardRoute: "/delivery/dashboard",
-          profileRoute: "/delivery/profile",
-          additionalFields: {
-            agentId: "DA001",
-            vehicleNumber: "DHK-1234",
-            licenseNumber: "DL123456789",
-          },
-        };
-      default: // customer
-        return {
-          name: "John Doe",
-          email: "john.doe@example.com",
-          phone: "+8801234567890",
-          role: "Customer",
-          emergencyContact: "+8801987654321",
-          address: "House 123, Road 45, Dhanmondi, Dhaka",
-          badge: "Customer",
-          badgeColor: "badge-outline",
-          dashboardRoute: "/customer/dashboard",
-          profileRoute: "/customer/profile",
-          additionalFields: {
-            customerId: "CUST001",
-            memberSince: "2024-06-15",
-            totalOrders: 23,
-          },
-        };
-    }
-  };
-
-  const userData = getUserData(userType);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    name: userData.name,
-    email: userData.email,
-    phone: userData.phone,
-    address: userData.address,
-    ...userData.additionalFields,
+    name: user.name || "John Doe",
+    email: user.email || "john.doe@example.com",
+    phone: user.phone || "+8801234567890",
+    address: user.address || "House 123, Road 45, Dhanmondi, Dhaka",
+    customerId: user.customerId || "CUST001",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -85,24 +25,58 @@ const Profile = ({ userType = "customer" }) => {
   });
 
   const handleEditProfile = () => setIsEditingProfile(true);
+
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
     // Reset to original data
     setProfileData({
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      address: userData.address,
-      ...userData.additionalFields,
+      name: user.name || "John Doe",
+      email: user.email || "john.doe@example.com",
+      phone: user.phone || "+8801234567890",
+      address: user.address || "House 123, Road 45, Dhanmondi, Dhaka",
+      customerId: user.customerId || "CUST001",
     });
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    console.log("Saving profile:", profileData);
-    // TODO: API call to save profile
-    setIsEditingProfile(false);
-    alert("Profile updated successfully!");
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          address: profileData.address,
+          customerId: profileData.customerId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update localStorage
+        const updatedUser = { ...user, ...profileData };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        setIsEditingProfile(false);
+        alert("Profile updated successfully!");
+      } else {
+        alert("Failed to update profile: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProfileInputChange = (field, value) => {
@@ -110,6 +84,7 @@ const Profile = ({ userType = "customer" }) => {
   };
 
   const handleChangePassword = () => setIsChangingPassword(true);
+
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setPasswordData({
@@ -119,25 +94,57 @@ const Profile = ({ userType = "customer" }) => {
     });
   };
 
-  const handleSavePassword = (e) => {
+  const handleSavePassword = async (e) => {
     e.preventDefault();
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("New passwords don't match!");
       return;
     }
+
     if (passwordData.newPassword.length < 6) {
       alert("Password must be at least 6 characters long!");
       return;
     }
-    console.log("Changing password for:", userData.email);
-    // TODO: API call to change password
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    alert("Password changed successfully!");
+
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/auth/change-password",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsChangingPassword(false);
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        alert("Password changed successfully!");
+      } else {
+        alert("Failed to change password: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("Error changing password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordInputChange = (field, value) => {
@@ -145,153 +152,44 @@ const Profile = ({ userType = "customer" }) => {
   };
 
   const handleLogout = () => {
-    console.log(`${userData.role} logging out...`);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (
       window.confirm(
-        `Are you sure you want to delete your ${userData.role.toLowerCase()} account? This action cannot be undone.`,
+        "Are you sure you want to delete your customer account? This action cannot be undone.",
       )
     ) {
-      console.log(`Deleting ${userData.role.toLowerCase()} account...`);
-      // TODO: API call to delete account
-      alert(`${userData.role} account deleted successfully`);
-      navigate("/");
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5000/api/auth/delete-account",
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert("Account deleted successfully");
+          navigate("/");
+        } else {
+          alert("Failed to delete account: " + data.message);
+        }
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        alert("Error deleting account. Please try again.");
+      }
     }
-  };
-
-  // Render additional fields based on user type
-  const renderAdditionalFields = () => {
-    if (userType === "admin") {
-      return (
-        <>
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">Employee ID</span>
-            </label>
-            {isEditingProfile ? (
-              <input
-                type="text"
-                className="input input-bordered"
-                value={profileData.employeeId}
-                onChange={(e) =>
-                  handleProfileInputChange("employeeId", e.target.value)
-                }
-              />
-            ) : (
-              <p className="rounded-lg bg-gray-50 px-4 py-3">
-                {profileData.employeeId}
-              </p>
-            )}
-          </div>
-
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">Department</span>
-            </label>
-            {isEditingProfile ? (
-              <input
-                type="text"
-                className="input input-bordered"
-                value={profileData.department}
-                onChange={(e) =>
-                  handleProfileInputChange("department", e.target.value)
-                }
-              />
-            ) : (
-              <p className="rounded-lg bg-gray-50 px-4 py-3">
-                {profileData.department}
-              </p>
-            )}
-          </div>
-        </>
-      );
-    }
-
-    if (userType === "delivery") {
-      return (
-        <>
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">Agent ID</span>
-            </label>
-            {isEditingProfile ? (
-              <input
-                type="text"
-                className="input input-bordered"
-                value={profileData.agentId}
-                onChange={(e) =>
-                  handleProfileInputChange("agentId", e.target.value)
-                }
-              />
-            ) : (
-              <p className="rounded-lg bg-gray-50 px-4 py-3">
-                {profileData.agentId}
-              </p>
-            )}
-          </div>
-
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">Vehicle Number</span>
-            </label>
-            {isEditingProfile ? (
-              <input
-                type="text"
-                className="input input-bordered"
-                value={profileData.vehicleNumber}
-                onChange={(e) =>
-                  handleProfileInputChange("vehicleNumber", e.target.value)
-                }
-              />
-            ) : (
-              <p className="rounded-lg bg-gray-50 px-4 py-3">
-                {profileData.vehicleNumber}
-              </p>
-            )}
-          </div>
-
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">License Number</span>
-            </label>
-            {isEditingProfile ? (
-              <input
-                type="text"
-                className="input input-bordered"
-                value={profileData.licenseNumber}
-                onChange={(e) =>
-                  handleProfileInputChange("licenseNumber", e.target.value)
-                }
-              />
-            ) : (
-              <p className="rounded-lg bg-gray-50 px-4 py-3">
-                {profileData.licenseNumber}
-              </p>
-            )}
-          </div>
-        </>
-      );
-    }
-
-    if (userType === "customer") {
-      return (
-        <>
-          <div className="form-control flex flex-col">
-            <label className="label">
-              <span className="label-text font-medium">Customer ID</span>
-            </label>
-            <p className="rounded-lg bg-gray-50 px-4 py-3">
-              {profileData.customerId}
-            </p>
-          </div>
-        </>
-      );
-    }
-
-    return null;
   };
 
   return (
@@ -302,7 +200,7 @@ const Profile = ({ userType = "customer" }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate(userData.dashboardRoute)}
+                onClick={() => navigate("/customer/dashboard")}
                 className="btn btn-ghost btn-circle"
               >
                 <svg
@@ -333,11 +231,10 @@ const Profile = ({ userType = "customer" }) => {
             <div className="card-body">
               <div className="flex flex-col items-center space-y-4 md:flex-row md:space-y-0 md:space-x-6">
                 <div className="avatar">
-                  {/* Replace text-based avatar with image */}
                   <div className="h-24 w-24 rounded-full bg-indigo-100 p-2">
                     <img
                       src={profileIcon}
-                      alt="Profile"
+                      alt="Customer Profile"
                       className="h-full w-full object-contain"
                     />
                   </div>
@@ -350,10 +247,8 @@ const Profile = ({ userType = "customer" }) => {
                   <p className="text-gray-600">{profileData.email}</p>
                   <p className="text-gray-600">{profileData.phone}</p>
                   <div className="mt-2 flex flex-wrap justify-center gap-2 md:justify-start">
-                    <span className={`badge ${userData.badgeColor}`}>
-                      {userData.badge}
-                    </span>
-                    <span className="badge badge-outline">Active Member</span>
+                    <span className="badge badge-outline">Customer</span>
+                    <span className="badge badge-primary">Active Member</span>
                   </div>
                 </div>
               </div>
@@ -369,6 +264,7 @@ const Profile = ({ userType = "customer" }) => {
                   <button
                     onClick={handleEditProfile}
                     className="btn btn-primary btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -390,14 +286,23 @@ const Profile = ({ userType = "customer" }) => {
                     <button
                       onClick={handleCancelProfileEdit}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProfile}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Save Changes
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
                     </button>
                   </div>
                 )}
@@ -405,7 +310,6 @@ const Profile = ({ userType = "customer" }) => {
 
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {/* Common Fields */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Full Name</span>
@@ -418,6 +322,7 @@ const Profile = ({ userType = "customer" }) => {
                         onChange={(e) =>
                           handleProfileInputChange("name", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -440,6 +345,7 @@ const Profile = ({ userType = "customer" }) => {
                         onChange={(e) =>
                           handleProfileInputChange("email", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -462,6 +368,7 @@ const Profile = ({ userType = "customer" }) => {
                         onChange={(e) =>
                           handleProfileInputChange("phone", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -470,8 +377,16 @@ const Profile = ({ userType = "customer" }) => {
                     )}
                   </div>
 
-                  {/* Role-specific Fields */}
-                  {renderAdditionalFields()}
+                  <div className="form-control flex flex-col">
+                    <label className="label">
+                      <span className="label-text font-medium">
+                        Customer ID
+                      </span>
+                    </label>
+                    <p className="rounded-lg bg-gray-50 px-4 py-3">
+                      {profileData.customerId}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="form-control flex flex-col">
@@ -485,6 +400,7 @@ const Profile = ({ userType = "customer" }) => {
                       onChange={(e) =>
                         handleProfileInputChange("address", e.target.value)
                       }
+                      required
                     />
                   ) : (
                     <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -505,6 +421,7 @@ const Profile = ({ userType = "customer" }) => {
                   <button
                     onClick={handleChangePassword}
                     className="btn btn-outline btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -526,14 +443,23 @@ const Profile = ({ userType = "customer" }) => {
                     <button
                       onClick={handleCancelPasswordChange}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSavePassword}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Update Password
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Password"
+                      )}
                     </button>
                   </div>
                 )}
@@ -559,6 +485,7 @@ const Profile = ({ userType = "customer" }) => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -579,6 +506,7 @@ const Profile = ({ userType = "customer" }) => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -599,6 +527,7 @@ const Profile = ({ userType = "customer" }) => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
                   </div>
@@ -648,6 +577,7 @@ const Profile = ({ userType = "customer" }) => {
                 <button
                   onClick={handleDeleteAccount}
                   className="btn btn-error btn-outline w-full justify-start"
+                  disabled={loading}
                 >
                   <svg
                     className="mr-3 h-5 w-5"
@@ -673,4 +603,4 @@ const Profile = ({ userType = "customer" }) => {
   );
 };
 
-export default Profile;
+export default CustomerProfile;

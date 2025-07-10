@@ -232,16 +232,57 @@ function authenticateToken(req, res, next) {
 
 // ...existing code...
 
+// // PUT /api/auth/profile - Update user profile
+// router.put("/profile", authenticateToken, async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+//     const { name, email, phone, employeeId, agentId } = req.body;
+
+//     // Update user profile
+//     const [result] = await pool.execute(
+//       "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?",
+//       [name, email, phone, userId]
+//     );
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     // Get updated user data
+//     const [users] = await pool.execute(
+//       "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+//       [userId]
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Profile updated successfully",
+//       data: users[0],
+//     });
+//   } catch (error) {
+//     console.error("Error updating profile:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to update profile",
+//       error: error.message,
+//     });
+//   }
+// });
+
+
 // PUT /api/auth/profile - Update user profile
 router.put("/profile", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { name, email, phone, employeeId, agentId } = req.body;
+    const { name, email, phone, employeeId, agentId, address, customerId } = req.body;
 
-    // Update user profile
+    // Update user profile with address for customers
     const [result] = await pool.execute(
-      "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?",
-      [name, email, phone, userId]
+      "UPDATE users SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?",
+      [name, email, phone, address || null, userId]
     );
 
     if (result.affectedRows === 0) {
@@ -253,7 +294,7 @@ router.put("/profile", authenticateToken, async (req, res) => {
 
     // Get updated user data
     const [users] = await pool.execute(
-      "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+      "SELECT id, name, email, phone, role, address FROM users WHERE id = ?",
       [userId]
     );
 
@@ -271,6 +312,7 @@ router.put("/profile", authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 // PUT /api/auth/change-password - Change user password
 router.put("/change-password", authenticateToken, async (req, res) => {
