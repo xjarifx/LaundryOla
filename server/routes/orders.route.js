@@ -1,6 +1,9 @@
 import express from "express";
-import pool from "../config/database.js";
-import { authenticateToken, authorizeRole } from "../middleware/auth.js";
+import pool from "../config/database.config.js";
+import {
+  authenticateToken,
+  authorizeRole,
+} from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 

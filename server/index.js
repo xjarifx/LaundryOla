@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { testConnection } from "./config/database.js";
-import servicesRoutes from "./routes/services.js";
-import ordersRoutes from "./routes/orders.js";
-import authRoutes from "./routes/auth.js"; // Add this line
+import { testConnection } from "./config/database.config.js";
+import servicesRoutes from "./routes/services.route.js";
+import ordersRoutes from "./routes/orders.route.js";
+import authRoutes from "./routes/auth.route.js"; // Add this line
 
 // Load environment variables
 dotenv.config();
