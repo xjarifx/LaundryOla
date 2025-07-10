@@ -7,6 +7,7 @@ const AdminDashboard = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
 
   // Fetch orders from database on component mount
   useEffect(() => {
@@ -67,14 +68,27 @@ const AdminDashboard = () => {
       );
       const data = await response.json();
       if (data.success) {
-        // Refresh orders after successful update
-        fetchOrders();
-        alert(`Order ${orderId} status updated to ${newStatus}`);
+        // Update only the specific order in state instead of refetching all orders
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status: newStatus } : order,
+          ),
+        );
+
+        // Show success toast
+        setToast({
+          type: "success",
+          message: `Order ${orderId} updated to ${newStatus}`,
+        });
+        setTimeout(() => setToast(null), 3000); // Auto-hide after 3 seconds
+
+        // Close the dropdown automatically
+        document.activeElement.blur();
       } else {
-        alert("Failed to update status: " + data.message);
+        console.error("Failed to update status:", data.message);
       }
     } catch (err) {
-      alert("Error updating status: " + err.message);
+      console.error("Error updating status:", err.message);
     }
   };
 
@@ -209,7 +223,13 @@ const AdminDashboard = () => {
                           </div>
                           <ul
                             tabIndex={0}
-                            className="dropdown-content menu rounded-box bg-base-100 z-[9999] w-52 border border-gray-200 p-2 shadow-lg"
+                            className="dropdown-content menu rounded-box bg-base-100 w-52 border border-gray-200 p-2 shadow-xl"
+                            style={{
+                              position: "fixed",
+                              zIndex: 9999,
+                              transform: "translateX(-100%)",
+                              marginTop: "8px",
+                            }}
                           >
                             <li className="mb-1">
                               <a
@@ -269,6 +289,19 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="toast toast-top toast-end z-50">
+          <div
+            className={`alert ${
+              toast.type === "success" ? "alert-success" : "alert-error"
+            }`}
+          >
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,67 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockOrders } from "../../data/services";
 
 const DeliveryDashboard = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-  // Debug log
-  console.log("Delivery user data:", user);
-
-  // Mock delivery agent data
-  const deliveryAgent = {
-    name: "Delivery Agent",
-    email: "agent@laundryola.com",
-    id: "DA001",
-  };
-
-  // All available orders for pickup/delivery
-  const [availableOrders] = useState([
-    ...mockOrders,
-    {
-      id: "ORD004",
-      status: "Pending",
-      services: [{ name: "Dry Cleaning", quantity: "3 items", price: 300 }],
-      pickupDate: "2025-07-07",
-      deliveryDate: "2025-07-09",
-      total: 300,
-      customer: "Alice Johnson",
-      phone: "+8801234567890",
-      address: "House 45, Road 12, Dhanmondi, Dhaka",
-      type: "pickup", // pickup from customer
-    },
-    {
-      id: "ORD005",
-      status: "In Progress",
-      services: [
-        { name: "Wash & Iron", quantity: "2 kg", price: 120 },
-        { name: "Shoe Cleaning", quantity: "1 pair", price: 120 },
-      ],
-      pickupDate: "2025-07-06",
-      deliveryDate: "2025-07-08",
-      total: 240,
-      customer: "Bob Wilson",
-      phone: "+8801987654321",
-      address: "Apartment 8B, Gulshan Avenue, Gulshan, Dhaka",
-      type: "pickup", // pickup from customer
-    },
-    {
-      id: "ORD006",
-      status: "Ready for Delivery",
-      services: [{ name: "Wash & Fold", quantity: "2 kg", price: 80 }],
-      pickupDate: "2025-07-05",
-      deliveryDate: "2025-07-07",
-      total: 80,
-      customer: "Sarah Ahmed",
-      phone: "+8801555666777",
-      address: "Plot 15, Road 7, Uttara, Dhaka",
-      type: "delivery", // delivery to customer
-    },
-  ]);
-
-  // Orders accepted by this delivery agent
+  const [availableOrders, setAvailableOrders] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch available orders from database
+  useEffect(() => {
+    fetchAvailableOrders();
+  }, []);
+
+  const fetchAvailableOrders = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/orders/delivery-available",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableOrders(data.data);
+      } else {
+        console.error("Failed to fetch orders:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -87,17 +63,67 @@ const DeliveryDashboard = () => {
     return { text: "Unknown", color: "text-gray-600" };
   };
 
-  const handleAcceptOrder = (order) => {
-    setMyOrders([
-      ...myOrders,
-      { ...order, acceptedAt: new Date().toISOString() },
-    ]);
-    alert(`Order ${order.id} accepted successfully!`);
+  const handleAcceptOrder = async (order) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${order.id}/accept`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Add to my orders
+        setMyOrders([
+          ...myOrders,
+          { ...order, acceptedAt: new Date().toISOString() },
+        ]);
+        // Remove from available orders
+        setAvailableOrders(availableOrders.filter((o) => o.id !== order.id));
+        alert(`Order ${order.id} accepted successfully!`);
+      } else {
+        alert("Failed to accept order: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      alert("Error accepting order. Please try again.");
+    }
   };
 
-  const handleCompleteTask = (orderId) => {
-    setMyOrders(myOrders.filter((order) => order.id !== orderId));
-    alert(`Task completed for order ${orderId}!`);
+  const handleCompleteTask = async (orderId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${orderId}/complete`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Remove from my orders
+        setMyOrders(myOrders.filter((order) => order.id !== orderId));
+        alert(
+          `Task completed for order ${orderId}! Order has been removed from database.`,
+        );
+      } else {
+        alert("Failed to complete task: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error completing task:", error);
+      alert("Error completing task. Please try again.");
+    }
   };
 
   const formatDate = (dateString) => {
@@ -114,25 +140,23 @@ const DeliveryDashboard = () => {
     navigate("/");
   };
 
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your delivery agent account? This action cannot be undone.",
-      )
-    ) {
-      console.log("Deleting delivery agent account...");
-      // TODO: API call to delete account
-      alert("Delivery agent account deleted successfully");
-      navigate("/");
-    }
-  };
-
   // Filter orders that are not already accepted by this agent
   const pendingOrders = availableOrders.filter(
     (order) =>
       (order.status === "Pending" || order.status === "Ready for Delivery") &&
       !myOrders.find((myOrder) => myOrder.id === order.id),
   );
+
+  if (loading) {
+    return (
+      <div className="bg-base-200 flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg text-primary"></div>
+          <p className="mt-2 text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-base-200 min-h-screen">
@@ -162,7 +186,7 @@ const DeliveryDashboard = () => {
                 >
                   <div className="flex w-10 items-center justify-center rounded-full bg-indigo-100">
                     <span className="font-semibold text-indigo-600">
-                      {deliveryAgent.name.charAt(0)}
+                      {user.name ? user.name.charAt(0) : "D"}
                     </span>
                   </div>
                 </div>
@@ -171,40 +195,10 @@ const DeliveryDashboard = () => {
                   className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
                 >
                   <li>
-                    <a onClick={() => navigate("/delivery/profile")}>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      Profile
-                    </a>
+                    <a onClick={() => navigate("/delivery/profile")}>Profile</a>
                   </li>
                   <li>
-                    <a onClick={handleLogout}>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      Logout
-                    </a>
+                    <a onClick={handleLogout}>Logout</a>
                   </li>
                 </ul>
               </div>
@@ -262,8 +256,8 @@ const DeliveryDashboard = () => {
                         return (
                           <tr key={order.id}>
                             <td className="font-semibold">{order.id}</td>
-                            <td>{order.customer}</td>
-                            <td className="text-sm">{order.phone}</td>
+                            <td>{order.customerName}</td>
+                            <td className="text-sm">{order.customerPhone}</td>
                             <td>
                               <span className={`font-medium ${taskType.color}`}>
                                 {taskType.text}
@@ -339,8 +333,8 @@ const DeliveryDashboard = () => {
                         return (
                           <tr key={order.id}>
                             <td className="font-semibold">{order.id}</td>
-                            <td>{order.customer}</td>
-                            <td className="text-sm">{order.phone}</td>
+                            <td>{order.customerName}</td>
+                            <td className="text-sm">{order.customerPhone}</td>
                             <td>
                               <span className={`font-medium ${taskType.color}`}>
                                 {taskType.text}

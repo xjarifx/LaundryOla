@@ -294,6 +294,151 @@ router.get(
   }
 );
 
+// GET /api/orders/delivery-available - Get available orders for delivery agents
+router.get(
+  "/delivery-available",
+  authenticateToken,
+  authorizeRole("delivery"),
+  async (req, res) => {
+    try {
+      const [orders] = await pool.execute(
+        `SELECT 
+          o.order_id as id, o.customer_name as customerName, 
+          o.customer_phone as customerPhone, o.status, 
+          o.pickup_date as pickupDate, o.delivery_date as deliveryDate, 
+          o.pickup_address as address, o.total_amount as total, 
+          o.created_at as createdAt
+        FROM orders o 
+        WHERE o.status IN ('Pending', 'Ready for Delivery')
+        ORDER BY o.created_at DESC`
+      );
+
+      // Convert total to number
+      const ordersWithNumericTotal = orders.map((order) => ({
+        ...order,
+        total: parseFloat(order.total),
+      }));
+
+      res.json({
+        success: true,
+        data: ordersWithNumericTotal,
+      });
+    } catch (error) {
+      console.error("Error fetching delivery orders:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch delivery orders",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PATCH /api/orders/:orderId/accept - Accept order by delivery agent
+router.patch(
+  "/:orderId/accept",
+  authenticateToken,
+  authorizeRole("delivery"),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const deliveryAgentId = req.user.userId;
+
+    try {
+      // Check if order exists and is available
+      const [orders] = await pool.execute(
+        "SELECT * FROM orders WHERE order_id = ? AND status IN ('Pending', 'Ready for Delivery')",
+        [orderId]
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found or not available for acceptance",
+        });
+      }
+
+      // Update order with delivery agent info
+      await pool.execute(
+        "UPDATE orders SET delivery_agent_id = ?, accepted_at = NOW() WHERE order_id = ?",
+        [deliveryAgentId, orderId]
+      );
+
+      res.json({
+        success: true,
+        message: "Order accepted successfully",
+        data: { orderId, deliveryAgentId },
+      });
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to accept order",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PATCH /api/orders/:orderId/complete - Complete order and delete from database
+router.patch(
+  "/:orderId/complete",
+  authenticateToken,
+  authorizeRole("delivery"),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const deliveryAgentId = req.user.userId;
+
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Check if order exists and is assigned to this delivery agent
+      const [orders] = await connection.execute(
+        "SELECT * FROM orders WHERE order_id = ? AND delivery_agent_id = ?",
+        [orderId, deliveryAgentId]
+      );
+
+      if (orders.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Order not found or not assigned to you",
+        });
+      }
+
+      // Delete order items first (due to foreign key constraint)
+      await connection.execute(
+        "DELETE FROM order_items WHERE order_id = (SELECT id FROM orders WHERE order_id = ?)",
+        [orderId]
+      );
+
+      // Delete the order
+      await connection.execute("DELETE FROM orders WHERE order_id = ?", [
+        orderId,
+      ]);
+
+      await connection.commit();
+
+      res.json({
+        success: true,
+        message: "Order completed and removed from database successfully",
+        data: { orderId },
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error completing order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to complete order",
+        error: error.message,
+      });
+    } finally {
+      connection.release();
+    }
+  }
+);
+
 // Helper function to map status to tracking stage
 function getTrackingStage(status) {
   switch (status) {
