@@ -7,6 +7,7 @@ const DeliveryDashboard = () => {
   const [availableOrders, setAvailableOrders] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [releasingOrder, setReleasingOrder] = useState(null);
 
   // Fetch available orders from database
   useEffect(() => {
@@ -93,6 +94,59 @@ const DeliveryDashboard = () => {
     } catch (error) {
       console.error("Error accepting order:", error);
       alert("Error accepting order. Please try again.");
+    }
+  };
+
+  const handleReleaseOrder = async (orderId) => {
+    // Show confirmation dialog
+    const confirmRelease = window.confirm(
+      `Are you sure you want to release Order #${orderId}? Other delivery agents will be able to accept it.`,
+    );
+
+    if (!confirmRelease) {
+      return;
+    }
+
+    setReleasingOrder(orderId);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${orderId}/release`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Find the order in myOrders
+        const releasedOrder = myOrders.find((order) => order.id === orderId);
+
+        if (releasedOrder) {
+          // Remove from my orders
+          setMyOrders(myOrders.filter((order) => order.id !== orderId));
+
+          // Add back to available orders (without acceptedAt field)
+          const { acceptedAt, ...orderWithoutAcceptedAt } = releasedOrder;
+          setAvailableOrders([...availableOrders, orderWithoutAcceptedAt]);
+        }
+
+        alert(
+          `Order #${orderId} has been released. Other delivery agents can now accept it.`,
+        );
+      } else {
+        alert("Failed to release order: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error releasing order:", error);
+      alert("Error releasing order. Please try again.");
+    } finally {
+      setReleasingOrder(null);
     }
   };
 
@@ -247,7 +301,7 @@ const DeliveryDashboard = () => {
                         <th>Task Type</th>
                         <th>Amount</th>
                         <th>Address</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -268,12 +322,28 @@ const DeliveryDashboard = () => {
                               {order.address}
                             </td>
                             <td>
-                              <button
-                                onClick={() => handleCompleteTask(order.id)}
-                                className="btn btn-xs btn-success"
-                              >
-                                Complete Task
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleCompleteTask(order.id)}
+                                  className="btn btn-xs btn-success"
+                                >
+                                  Complete Task
+                                </button>
+                                <button
+                                  onClick={() => handleReleaseOrder(order.id)}
+                                  className="btn btn-xs btn-warning btn-outline"
+                                  disabled={releasingOrder === order.id}
+                                >
+                                  {releasingOrder === order.id ? (
+                                    <>
+                                      <span className="loading loading-spinner loading-xs"></span>
+                                      Releasing...
+                                    </>
+                                  ) : (
+                                    "Release Order"
+                                  )}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

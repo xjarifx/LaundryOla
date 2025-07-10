@@ -1,26 +1,54 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const NewOrder = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   
-  // Add services state
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   
-  // State for selected services
   const [selectedServices, setSelectedServices] = useState([]);
   
-  // Simplified order form - remove user credentials
   const [orderForm, setOrderForm] = useState({
     pickupDate: '',
     pickupTime: '',
     instructions: '',
   });
 
-  // State for form validation
   const [errors, setErrors] = useState({});
+
+  // Handle reorder data from location state
+  useEffect(() => {
+    if (location.state?.reorderData) {
+      const { services: reorderServices, instructions } = location.state.reorderData;
+      
+      // Pre-fill instructions
+      setOrderForm(prev => ({
+        ...prev,
+        instructions: instructions || ''
+      }));
+
+      // Pre-select services when services are loaded
+      if (services.length > 0 && reorderServices) {
+        const preSelectedServices = reorderServices.map(reorderService => {
+          const matchingService = services.find(s => s.name === reorderService.name);
+          if (matchingService) {
+            return {
+              ...matchingService,
+              quantity: parseFloat(reorderService.quantity.split(' ')[0]) || 1,
+              total: matchingService.price * (parseFloat(reorderService.quantity.split(' ')[0]) || 1)
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        setSelectedServices(preSelectedServices);
+      }
+    }
+  }, [location.state, services]);
 
   const handleServiceSelection = (service, quantity) => {
     const existingIndex = selectedServices.findIndex(s => s.id === service.id);
@@ -110,6 +138,7 @@ const NewOrder = () => {
     };
 
     try {
+      setSubmitting(true);
       const token = localStorage.getItem("token");
       const response = await fetch('http://localhost:5000/api/orders', {
         method: 'POST',
@@ -131,6 +160,8 @@ const NewOrder = () => {
     } catch (error) {
       console.error('Error placing order:', error);
       alert('Error placing order. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 

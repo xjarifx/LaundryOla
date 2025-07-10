@@ -6,6 +6,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [cancellingOrder, setCancellingOrder] = useState(null);
 
   // Fetch orders from API with authentication
   useEffect(() => {
@@ -50,6 +51,72 @@ const Orders = () => {
     }
   };
 
+  const handleCancelOrder = async (orderId) => {
+    // Show confirmation dialog
+    const confirmCancel = window.confirm(
+      `Are you sure you want to cancel Order #${orderId}? This action cannot be undone.`
+    );
+
+    if (!confirmCancel) {
+      return;
+    }
+
+    setCancellingOrder(orderId);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the order status in the local state
+        setOrders(
+          orders.map((order) =>
+            order.id === orderId
+              ? { ...order, status: "Cancelled" }
+              : order
+          )
+        );
+
+        alert(`Order #${orderId} has been cancelled successfully.`);
+      } else {
+        alert(`Failed to cancel order: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      alert("Error cancelling order. Please try again.");
+    } finally {
+      setCancellingOrder(null);
+    }
+  };
+
+  const handleReorder = async (order) => {
+    try {
+      // Navigate to new order page with pre-filled data
+      navigate("/customer/new-order", {
+        state: {
+          reorderData: {
+            services: order.services,
+            instructions: order.instructions || "",
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error processing reorder:", error);
+      alert("Error processing reorder. Please try again.");
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Pending":
@@ -60,6 +127,8 @@ const Orders = () => {
         return "badge-success";
       case "Completed":
         return "badge-neutral";
+      case "Cancelled":
+        return "badge-error";
       default:
         return "badge-ghost";
     }
@@ -75,6 +144,8 @@ const Orders = () => {
         return 75;
       case "Delivered":
         return 100;
+      case "Cancelled":
+        return 0;
       default:
         return 0;
     }
@@ -86,6 +157,11 @@ const Orders = () => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Check if order can be cancelled
+  const canCancelOrder = (status) => {
+    return status === "Pending" || status === "In Progress";
   };
 
   // Loading state
@@ -197,30 +273,54 @@ const Orders = () => {
                   </div>
 
                   {/* Tracking Progress */}
-                  <div className="mb-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">
-                        Order Progress
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {order.trackingStage}
-                      </span>
+                  {order.status !== "Cancelled" && (
+                    <div className="mb-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          Order Progress
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {order.trackingStage}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
+                          style={{
+                            width: `${getTrackingProgress(order.trackingStage)}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <div className="mt-1 flex justify-between text-xs text-gray-500">
+                        <span>Picked Up</span>
+                        <span>Processing</span>
+                        <span>Ready</span>
+                        <span>Delivered</span>
+                      </div>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-gray-200">
-                      <div
-                        className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
-                        style={{
-                          width: `${getTrackingProgress(order.trackingStage)}%`,
-                        }}
-                      ></div>
+                  )}
+
+                  {/* Cancelled Order Message */}
+                  {order.status === "Cancelled" && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center">
+                        <svg
+                          className="w-5 h-5 text-red-500 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="text-red-700 font-medium">
+                          This order has been cancelled
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-1 flex justify-between text-xs text-gray-500">
-                      <span>Picked Up</span>
-                      <span>Processing</span>
-                      <span>Ready</span>
-                      <span>Delivered</span>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Services Summary */}
                   <div className="mb-4">
@@ -252,15 +352,39 @@ const Orders = () => {
                     >
                       View Details
                     </button>
+
                     {order.status === "Completed" && (
-                      <button className="btn btn-primary btn-sm flex-1">
+                      <button
+                        onClick={() => handleReorder(order)}
+                        className="btn btn-primary btn-sm flex-1"
+                      >
                         Reorder
                       </button>
                     )}
-                    {(order.status === "Pending" ||
-                      order.status === "In Progress") && (
-                      <button className="btn btn-error btn-outline btn-sm flex-1">
-                        Cancel Order
+
+                    {canCancelOrder(order.status) && (
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        className="btn btn-error btn-outline btn-sm flex-1"
+                        disabled={cancellingOrder === order.id}
+                      >
+                        {cancellingOrder === order.id ? (
+                          <>
+                            <span className="loading loading-spinner loading-xs"></span>
+                            Cancelling...
+                          </>
+                        ) : (
+                          "Cancel Order"
+                        )}
+                      </button>
+                    )}
+
+                    {order.status === "Cancelled" && (
+                      <button
+                        onClick={() => handleReorder(order)}
+                        className="btn btn-success btn-outline btn-sm flex-1"
+                      >
+                        Reorder
                       </button>
                     )}
                   </div>
@@ -354,35 +478,66 @@ const Orders = () => {
               </div>
 
               {/* Tracking Timeline */}
-              <div>
-                <label className="text-sm font-medium text-gray-600">
-                  Order Timeline
-                </label>
-                <div className="mt-2">
-                  <div className="steps steps-vertical lg:steps-horizontal w-full">
-                    <div
-                      className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 25 ? "step-primary" : ""}`}
-                    >
-                      Picked Up
-                    </div>
-                    <div
-                      className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 50 ? "step-primary" : ""}`}
-                    >
-                      Processing
-                    </div>
-                    <div
-                      className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 75 ? "step-primary" : ""}`}
-                    >
-                      Ready
-                    </div>
-                    <div
-                      className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 100 ? "step-primary" : ""}`}
-                    >
-                      Delivered
+              {selectedOrder.status !== "Cancelled" && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">
+                    Order Timeline
+                  </label>
+                  <div className="mt-2">
+                    <div className="steps steps-vertical lg:steps-horizontal w-full">
+                      <div
+                        className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 25 ? "step-primary" : ""
+                          }`}
+                      >
+                        Picked Up
+                      </div>
+                      <div
+                        className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 50 ? "step-primary" : ""
+                          }`}
+                      >
+                        Processing
+                      </div>
+                      <div
+                        className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 75 ? "step-primary" : ""
+                          }`}
+                      >
+                        Ready
+                      </div>
+                      <div
+                        className={`step ${getTrackingProgress(selectedOrder.trackingStage) >= 100 ? "step-primary" : ""
+                          }`}
+                      >
+                        Delivered
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Cancelled Order Info */}
+              {selectedOrder.status === "Cancelled" && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <svg
+                      className="w-5 h-5 text-red-500 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className="text-red-700 font-medium">Order Cancelled</span>
+                  </div>
+                  <p className="text-red-600 text-sm">
+                    This order was cancelled and no charges were applied. You can
+                    place a new order with the same services using the "Reorder"
+                    button.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="modal-action">
@@ -392,8 +547,43 @@ const Orders = () => {
               >
                 Close
               </button>
+
               {selectedOrder.status === "Completed" && (
-                <button className="btn btn-primary">Reorder</button>
+                <button
+                  onClick={() => handleReorder(selectedOrder)}
+                  className="btn btn-primary"
+                >
+                  Reorder
+                </button>
+              )}
+
+              {canCancelOrder(selectedOrder.status) && (
+                <button
+                  onClick={() => {
+                    setSelectedOrder(null);
+                    handleCancelOrder(selectedOrder.id);
+                  }}
+                  className="btn btn-error"
+                  disabled={cancellingOrder === selectedOrder.id}
+                >
+                  {cancellingOrder === selectedOrder.id ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs"></span>
+                      Cancelling...
+                    </>
+                  ) : (
+                    "Cancel Order"
+                  )}
+                </button>
+              )}
+
+              {selectedOrder.status === "Cancelled" && (
+                <button
+                  onClick={() => handleReorder(selectedOrder)}
+                  className="btn btn-success"
+                >
+                  Reorder
+                </button>
               )}
             </div>
           </div>

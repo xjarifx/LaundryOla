@@ -439,6 +439,141 @@ router.patch(
   }
 );
 
+// PATCH /api/orders/:orderId/cancel - Cancel order (PROTECTED: customer)
+router.patch(
+  "/:orderId/cancel",
+  authenticateToken,
+  authorizeRole("customer"),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const customerId = req.user.userId;
+
+    try {
+      // Check if order exists and belongs to the customer
+      const [orders] = await pool.execute(
+        "SELECT * FROM orders WHERE order_id = ? AND customer_id = ?",
+        [orderId, customerId]
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found or you don't have permission to cancel this order",
+        });
+      }
+
+      const order = orders[0];
+
+      // Check if order can be cancelled (only Pending or In Progress orders)
+      if (order.status !== "Pending" && order.status !== "In Progress") {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot cancel order with status: ${order.status}. Only Pending or In Progress orders can be cancelled.`,
+        });
+      }
+
+      // Update order status to Cancelled
+      const [result] = await pool.execute(
+        "UPDATE orders SET status = ?, cancelled_at = NOW() WHERE order_id = ? AND customer_id = ?",
+        ["Cancelled", orderId, customerId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to cancel order",
+        });
+      }
+
+      // Get updated order details
+      const [updatedOrders] = await pool.execute(
+        "SELECT order_id, status, total_amount, pickup_date, delivery_date, cancelled_at FROM orders WHERE order_id = ?",
+        [orderId]
+      );
+
+      res.json({
+        success: true,
+        message: "Order cancelled successfully",
+        data: {
+          orderId: updatedOrders[0].order_id,
+          status: updatedOrders[0].status,
+          total: parseFloat(updatedOrders[0].total_amount),
+          cancelledAt: updatedOrders[0].cancelled_at,
+        },
+      });
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to cancel order",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PATCH /api/orders/:orderId/release - Release order by delivery agent
+router.patch(
+  "/:orderId/release",
+  authenticateToken,
+  authorizeRole("delivery"),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const deliveryAgentId = req.user.userId;
+
+    try {
+      // Check if order exists and is assigned to this delivery agent
+      const [orders] = await pool.execute(
+        "SELECT * FROM orders WHERE order_id = ? AND delivery_agent_id = ?",
+        [orderId, deliveryAgentId]
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found or not assigned to you",
+        });
+      }
+
+      const order = orders[0];
+
+      // Only allow release if order is not completed or delivered
+      if (order.status === "Completed" || order.status === "Delivered") {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot release completed or delivered orders",
+        });
+      }
+
+      // Update order to remove delivery agent assignment
+      const [result] = await pool.execute(
+        "UPDATE orders SET delivery_agent_id = NULL, accepted_at = NULL WHERE order_id = ? AND delivery_agent_id = ?",
+        [orderId, deliveryAgentId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to release order",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Order released successfully. Other delivery agents can now accept it.",
+        data: { orderId },
+      });
+    } catch (error) {
+      console.error("Error releasing order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to release order",
+        error: error.message,
+      });
+    }
+  }
+);
+
 // Helper function to map status to tracking stage
 function getTrackingStage(status) {
   switch (status) {
