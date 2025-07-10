@@ -1,29 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
 
 const AdminProfile = () => {
   const navigate = useNavigate();
-
-  // Simplified admin data without department and joinDate
-  const userData = {
-    name: "Admin User",
-    email: "admin@laundryola.com",
-    phone: "+8801234567890",
-    employeeId: "ADM001",
-    address: "LaundryOla Head Office, Dhaka",
-  };
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Remove department from the profile data
   const [profileData, setProfileData] = useState({
-    name: userData.name,
-    email: userData.email,
-    phone: userData.phone,
-    employeeId: userData.employeeId,
-    address: userData.address,
+    name: user.name || "Admin User",
+    email: user.email || "admin@laundryola.com",
+    phone: user.phone || "+8801234567890",
+    employeeId: user.employeeId || "ADM001",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -33,23 +24,56 @@ const AdminProfile = () => {
   });
 
   const handleEditProfile = () => setIsEditingProfile(true);
+
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
-    // Reset form data without department
+    // Reset to original data
     setProfileData({
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      employeeId: userData.employeeId,
-      address: userData.address,
+      name: user.name || "Admin User",
+      email: user.email || "admin@laundryola.com",
+      phone: user.phone || "+8801234567890",
+      employeeId: user.employeeId || "ADM001",
     });
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    console.log("Saving admin profile:", profileData);
-    setIsEditingProfile(false);
-    alert("Admin profile updated successfully!");
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          employeeId: profileData.employeeId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update localStorage
+        const updatedUser = { ...user, ...profileData };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        setIsEditingProfile(false);
+        alert("Profile updated successfully!");
+      } else {
+        alert("Failed to update profile: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProfileInputChange = (field, value) => {
@@ -57,6 +81,7 @@ const AdminProfile = () => {
   };
 
   const handleChangePassword = () => setIsChangingPassword(true);
+
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setPasswordData({
@@ -66,23 +91,57 @@ const AdminProfile = () => {
     });
   };
 
-  const handleSavePassword = (e) => {
+  const handleSavePassword = async (e) => {
     e.preventDefault();
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("New passwords don't match!");
       return;
     }
+
     if (passwordData.newPassword.length < 6) {
       alert("Password must be at least 6 characters long!");
       return;
     }
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    alert("Password changed successfully!");
+
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/auth/change-password",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsChangingPassword(false);
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        alert("Password changed successfully!");
+      } else {
+        alert("Failed to change password: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("Error changing password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordInputChange = (field, value) => {
@@ -90,16 +149,43 @@ const AdminProfile = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (
       window.confirm(
         "Are you sure you want to delete your admin account? This action cannot be undone.",
       )
     ) {
-      navigate("/");
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5000/api/auth/delete-account",
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert("Account deleted successfully");
+          navigate("/");
+        } else {
+          alert("Failed to delete account: " + data.message);
+        }
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        alert("Error deleting account. Please try again.");
+      }
     }
   };
 
@@ -128,11 +214,9 @@ const AdminProfile = () => {
                   />
                 </svg>
               </button>
-              <h1 className="text-2xl font-bold text-indigo-700">
-                Admin Profile
-              </h1>
+              <h1 className="text-2xl font-bold text-indigo-700">My Profile</h1>
             </div>
-            <span className="text-sm text-gray-500">LaundryOla</span>
+            <span className="text-sm text-gray-500">LaundryOla Admin</span>
           </div>
         </div>
       </header>
@@ -177,6 +261,7 @@ const AdminProfile = () => {
                   <button
                     onClick={handleEditProfile}
                     className="btn btn-primary btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -198,14 +283,23 @@ const AdminProfile = () => {
                     <button
                       onClick={handleCancelProfileEdit}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProfile}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Save Changes
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
                     </button>
                   </div>
                 )}
@@ -225,6 +319,7 @@ const AdminProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("name", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -247,6 +342,7 @@ const AdminProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("email", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -269,6 +365,7 @@ const AdminProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("phone", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -277,7 +374,6 @@ const AdminProfile = () => {
                     )}
                   </div>
 
-                  {/* Admin-specific Fields */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">
@@ -288,28 +384,6 @@ const AdminProfile = () => {
                       {profileData.employeeId}
                     </p>
                   </div>
-
-                  {/* Department field removed */}
-                  {/* Join Date field removed */}
-                </div>
-
-                <div className="form-control flex flex-col">
-                  <label className="label">
-                    <span className="label-text font-medium">Address</span>
-                  </label>
-                  {isEditingProfile ? (
-                    <textarea
-                      className="textarea textarea-bordered h-24"
-                      value={profileData.address}
-                      onChange={(e) =>
-                        handleProfileInputChange("address", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <p className="rounded-lg bg-gray-50 px-4 py-3">
-                      {profileData.address}
-                    </p>
-                  )}
                 </div>
               </form>
             </div>
@@ -324,6 +398,7 @@ const AdminProfile = () => {
                   <button
                     onClick={handleChangePassword}
                     className="btn btn-outline btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -345,14 +420,23 @@ const AdminProfile = () => {
                     <button
                       onClick={handleCancelPasswordChange}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSavePassword}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Update Password
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Password"
+                      )}
                     </button>
                   </div>
                 )}
@@ -378,6 +462,7 @@ const AdminProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -398,6 +483,7 @@ const AdminProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -418,6 +504,7 @@ const AdminProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
                   </div>
@@ -467,6 +554,7 @@ const AdminProfile = () => {
                 <button
                   onClick={handleDeleteAccount}
                   className="btn btn-error btn-outline w-full justify-start"
+                  disabled={loading}
                 >
                   <svg
                     className="mr-3 h-5 w-5"

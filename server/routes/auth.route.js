@@ -229,5 +229,145 @@ function authenticateToken(req, res, next) {
   });
 }
 
+
+// ...existing code...
+
+// PUT /api/auth/profile - Update user profile
+router.put("/profile", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name, email, phone, employeeId, agentId } = req.body;
+
+    // Update user profile
+    const [result] = await pool.execute(
+      "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?",
+      [name, email, phone, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Get updated user data
+    const [users] = await pool.execute(
+      "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      data: users[0],
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+      error: error.message,
+    });
+  }
+});
+
+// PUT /api/auth/change-password - Change user password
+router.put("/change-password", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    // Get current user data
+    const [users] = await pool.execute(
+      "SELECT password FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      users[0].password
+    );
+
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 10;
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    const [result] = await pool.execute(
+      "UPDATE users SET password = ? WHERE id = ?",
+      [hashedNewPassword, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update password",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to change password",
+      error: error.message,
+    });
+  }
+});
+
+// DELETE /api/auth/delete-account - Delete user account
+router.delete("/delete-account", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Delete user account
+    const [result] = await pool.execute(
+      "DELETE FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete account",
+      error: error.message,
+    });
+  }
+});
+
+// ...existing code...
+
 export default router;
 export { authenticateToken };

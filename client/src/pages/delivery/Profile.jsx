@@ -1,29 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import profileIcon from "/profileIcon.png"; // Updated import path
+import profileIcon from "/profileIcon.png";
 
 const DeliveryProfile = () => {
   const navigate = useNavigate();
-
-  // Simplified delivery agent data
-  const userData = {
-    name: "Delivery Agent",
-    email: "agent@laundryola.com",
-    phone: "+8801234567890",
-    agentId: "DA001",
-    address: "123 Delivery Lane, Gulshan, Dhaka", // Added address
-  };
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Add address to the profile data
   const [profileData, setProfileData] = useState({
-    name: userData.name,
-    email: userData.email,
-    phone: userData.phone,
-    agentId: userData.agentId,
-    address: userData.address, // Added address field
+    name: user.name || "Delivery Agent",
+    email: user.email || "agent@laundryola.com",
+    phone: user.phone || "+8801234567890",
+    agentId: user.agentId || "DA001",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -33,23 +24,54 @@ const DeliveryProfile = () => {
   });
 
   const handleEditProfile = () => setIsEditingProfile(true);
+  
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
-    // Reset to essential fields including address
     setProfileData({
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      agentId: userData.agentId,
-      address: userData.address, // Added address
+      name: user.name || "Delivery Agent",
+      email: user.email || "agent@laundryola.com",
+      phone: user.phone || "+8801234567890",
+      agentId: user.agentId || "DA001",
     });
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    console.log("Saving delivery agent profile:", profileData);
-    setIsEditingProfile(false);
-    alert("Delivery agent profile updated successfully!");
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          agentId: profileData.agentId,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const updatedUser = { ...user, ...profileData };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        setIsEditingProfile(false);
+        alert("Profile updated successfully!");
+      } else {
+        alert("Failed to update profile: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProfileInputChange = (field, value) => {
@@ -57,6 +79,7 @@ const DeliveryProfile = () => {
   };
 
   const handleChangePassword = () => setIsChangingPassword(true);
+  
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setPasswordData({
@@ -66,23 +89,54 @@ const DeliveryProfile = () => {
     });
   };
 
-  const handleSavePassword = (e) => {
+  const handleSavePassword = async (e) => {
     e.preventDefault();
+    
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("New passwords don't match!");
       return;
     }
+    
     if (passwordData.newPassword.length < 6) {
       alert("Password must be at least 6 characters long!");
       return;
     }
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    alert("Password changed successfully!");
+
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/change-password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsChangingPassword(false);
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        alert("Password changed successfully!");
+      } else {
+        alert("Failed to change password: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("Error changing password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordInputChange = (field, value) => {
@@ -90,16 +144,40 @@ const DeliveryProfile = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (
       window.confirm(
         "Are you sure you want to delete your delivery agent account? This action cannot be undone.",
       )
     ) {
-      navigate("/");
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:5000/api/auth/delete-account", {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert("Account deleted successfully");
+          navigate("/");
+        } else {
+          alert("Failed to delete account: " + data.message);
+        }
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        alert("Error deleting account. Please try again.");
+      }
     }
   };
 
@@ -176,6 +254,7 @@ const DeliveryProfile = () => {
                   <button
                     onClick={handleEditProfile}
                     className="btn btn-primary btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -197,14 +276,23 @@ const DeliveryProfile = () => {
                     <button
                       onClick={handleCancelProfileEdit}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProfile}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Save Changes
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
                     </button>
                   </div>
                 )}
@@ -212,7 +300,6 @@ const DeliveryProfile = () => {
 
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {/* Name */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Full Name</span>
@@ -225,6 +312,7 @@ const DeliveryProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("name", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -233,7 +321,6 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
-                  {/* Email */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">
@@ -248,6 +335,7 @@ const DeliveryProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("email", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -256,7 +344,6 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
-                  {/* Phone */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">
@@ -271,6 +358,7 @@ const DeliveryProfile = () => {
                         onChange={(e) =>
                           handleProfileInputChange("phone", e.target.value)
                         }
+                        required
                       />
                     ) : (
                       <p className="rounded-lg bg-gray-50 px-4 py-3">
@@ -279,7 +367,6 @@ const DeliveryProfile = () => {
                     )}
                   </div>
 
-                  {/* Agent ID */}
                   <div className="form-control flex flex-col">
                     <label className="label">
                       <span className="label-text font-medium">Agent ID</span>
@@ -288,26 +375,6 @@ const DeliveryProfile = () => {
                       {profileData.agentId}
                     </p>
                   </div>
-                </div>
-
-                {/* Address - Added for all profile types */}
-                <div className="form-control flex flex-col">
-                  <label className="label">
-                    <span className="label-text font-medium">Address</span>
-                  </label>
-                  {isEditingProfile ? (
-                    <textarea
-                      className="textarea textarea-bordered h-24"
-                      value={profileData.address}
-                      onChange={(e) =>
-                        handleProfileInputChange("address", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <p className="rounded-lg bg-gray-50 px-4 py-3">
-                      {profileData.address}
-                    </p>
-                  )}
                 </div>
               </form>
             </div>
@@ -322,6 +389,7 @@ const DeliveryProfile = () => {
                   <button
                     onClick={handleChangePassword}
                     className="btn btn-outline btn-sm"
+                    disabled={loading}
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -343,14 +411,23 @@ const DeliveryProfile = () => {
                     <button
                       onClick={handleCancelPasswordChange}
                       className="btn btn-outline btn-sm"
+                      disabled={loading}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSavePassword}
                       className="btn btn-success btn-sm"
+                      disabled={loading}
                     >
-                      Update Password
+                      {loading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Password"
+                      )}
                     </button>
                   </div>
                 )}
@@ -376,6 +453,7 @@ const DeliveryProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -396,6 +474,7 @@ const DeliveryProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
 
@@ -416,6 +495,7 @@ const DeliveryProfile = () => {
                             e.target.value,
                           )
                         }
+                        required
                       />
                     </div>
                   </div>
@@ -465,6 +545,7 @@ const DeliveryProfile = () => {
                 <button
                   onClick={handleDeleteAccount}
                   className="btn btn-error btn-outline w-full justify-start"
+                  disabled={loading}
                 >
                   <svg
                     className="mr-3 h-5 w-5"
