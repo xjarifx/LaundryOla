@@ -10,33 +10,87 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProfile from "./pages/admin/Profile";
 import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
 import DeliveryProfile from "./pages/delivery/Profile";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 document.documentElement.setAttribute("data-theme", "light");
 
 function App() {
   return (
     <Routes>
-      {/* Auth Routes */}
+      {/* Public Routes */}
       <Route path="/" element={<Landing />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/signup" element={<Signup />} />
 
-      {/* Customer Routes */}
-      <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-      <Route path="/customer/orders" element={<Orders />} />
-      <Route path="/customer/new-order" element={<NewOrder />} />
-      <Route path="/customer/profile" element={<CustomerProfile />} />
+      {/* Customer */}
+      <Route
+        path="/customer/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/orders"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <Orders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/new-order"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <NewOrder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/profile"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerProfile />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/profile" element={<AdminProfile />} />
+      {/* Admin */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/profile"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminProfile />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Delivery Agent Routes */}
-      <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
-      <Route path="/delivery/profile" element={<DeliveryProfile />} />
-
-      {/* Redirect old dashboard route */}
-      <Route path="/dashboard" element={<CustomerDashboard />} />
+      {/* Delivery */}
+      <Route
+        path="/delivery/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["delivery"]}>
+            <DeliveryDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/delivery/profile"
+        element={
+          <ProtectedRoute allowedRoles={["delivery"]}>
+            <DeliveryProfile />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

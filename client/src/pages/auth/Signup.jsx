@@ -1,25 +1,43 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Add these imports
+import { useNavigate, Link } from "react-router-dom";
 
 const Signup = () => {
-  const navigate = useNavigate(); // Add this
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    role: "",
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
 
-  const handleSignup = (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSignup = async (e) => {
     e.preventDefault();
-    console.log({ name, phone, role, email, password });
-
-    // Route based on selected role
-    if (role === "admin") {
-      navigate("/admin/dashboard");
-    } else if (role === "delivery") {
-      navigate("/delivery/dashboard");
-    } else {
-      navigate("/customer/dashboard");
+    setError("");
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+        const role = data.data.user.role;
+        if (role === "admin") navigate("/admin/dashboard");
+        else if (role === "delivery") navigate("/delivery/dashboard");
+        else navigate("/customer/dashboard");
+      } else {
+        setError(data.message || "Signup failed");
+      }
+    } catch (err) {
+      setError("Network error");
     }
   };
 
@@ -29,6 +47,7 @@ const Signup = () => {
         <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
           Create Your Account
         </h2>
+        {error && <div className="alert alert-error mb-4">{error}</div>}
         <form onSubmit={handleSignup} className="space-y-5">
           {/* Name */}
           <div className="form-control flex flex-col">
@@ -39,11 +58,12 @@ const Signup = () => {
             </label>
             <input
               type="text"
+              name="name"
               placeholder="Your full name"
               className="input input-bordered w-full"
-              value={name}
+              value={form.name}
               required
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleChange}
             />
           </div>
 
@@ -56,11 +76,12 @@ const Signup = () => {
             </label>
             <input
               type="tel"
+              name="phone"
               placeholder="+8801XXXXXXXXX"
               className="input input-bordered w-full"
-              value={phone}
+              value={form.phone}
               required
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={handleChange}
             />
           </div>
 
@@ -72,10 +93,11 @@ const Signup = () => {
               </span>
             </label>
             <select
+              name="role"
               className="select select-bordered w-full"
-              value={role}
+              value={form.role}
               required
-              onChange={(e) => setRole(e.target.value)}
+              onChange={handleChange}
             >
               <option value="" disabled>
                 Select your role
@@ -95,11 +117,12 @@ const Signup = () => {
             </label>
             <input
               type="email"
+              name="email"
               placeholder="you@example.com"
               className="input input-bordered w-full"
-              value={email}
+              value={form.email}
               required
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleChange}
             />
           </div>
 
@@ -112,11 +135,12 @@ const Signup = () => {
             </label>
             <input
               type="password"
+              name="password"
               placeholder="••••••••"
               className="input input-bordered w-full"
-              value={password}
+              value={form.password}
               required
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleChange}
             />
           </div>
 

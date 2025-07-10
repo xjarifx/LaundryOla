@@ -4,6 +4,10 @@ import { mockOrders } from "../../data/services";
 
 const DeliveryDashboard = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Debug log
+  console.log("Delivery user data:", user);
 
   // Mock delivery agent data
   const deliveryAgent = {
@@ -105,7 +109,8 @@ const DeliveryDashboard = () => {
   };
 
   const handleLogout = () => {
-    console.log("Delivery agent logging out...");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
@@ -143,9 +148,11 @@ const DeliveryDashboard = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="font-semibold text-gray-800">
-                  {deliveryAgent.name}
+                  {user.name || "Delivery Agent"}
                 </p>
-                <p className="text-sm text-gray-500">{deliveryAgent.email}</p>
+                <p className="text-sm text-gray-500">
+                  {user.email || "agent@laundryola.com"}
+                </p>
               </div>
               <div className="dropdown dropdown-end">
                 <div

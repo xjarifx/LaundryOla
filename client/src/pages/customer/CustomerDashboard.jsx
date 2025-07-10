@@ -1,13 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { mockUser } from "../../data/services";
-import profileIcon from "/profileIcon.png"; // Add this import
+import profileIcon from "/profileIcon.png";
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Debug log to see what we're getting
+  console.log("User data from localStorage:", user);
 
   const handleLogout = () => {
-    console.log("Logging out...");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
@@ -20,8 +24,12 @@ const CustomerDashboard = () => {
             <h1 className="text-2xl font-bold text-indigo-700">LaundryOla</h1>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="font-semibold text-gray-800">{mockUser.name}</p>
-                <p className="text-sm text-gray-500">{mockUser.email}</p>
+                <p className="font-semibold text-gray-800">
+                  {user.name || "Guest User"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {user.email || "No email"}
+                </p>
               </div>
               <div className="dropdown dropdown-end">
                 <div
@@ -29,12 +37,11 @@ const CustomerDashboard = () => {
                   role="button"
                   className="btn btn-ghost btn-circle avatar"
                 >
-                  {/* Replace text-based avatar with image */}
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 p-1">
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 p-1">
                     <img
                       src={profileIcon}
                       alt="Profile"
-                      className="w-full h-full object-contain"
+                      className="h-full w-full object-contain"
                     />
                   </div>
                 </div>

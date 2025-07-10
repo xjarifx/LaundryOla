@@ -1,22 +1,39 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Add these imports
+import { useNavigate, Link } from "react-router-dom";
 
 const Signin = () => {
-  const navigate = useNavigate(); // Add this
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Logging in:", { email, password });
-
-    // Simple routing based on email (mock logic)
-    if (email.includes("admin")) {
-      navigate("/admin/dashboard");
-    } else if (email.includes("delivery")) {
-      navigate("/delivery/dashboard");
-    } else {
-      navigate("/customer/dashboard");
+    setError("");
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem("token", data.data.token);
+        // Optionally store user info
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+        // Redirect based on role
+        const role = data.data.user.role;
+        if (role === "admin") navigate("/admin/dashboard");
+        else if (role === "delivery") navigate("/delivery/dashboard");
+        else navigate("/customer/dashboard");
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      setError("Network error");
     }
   };
 
@@ -26,7 +43,8 @@ const Signin = () => {
         <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
           Login to Laundry Service
         </h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+        {error && <div className="alert alert-error mb-4">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-control flex flex-col">
             <label className="label">
               <span className="label-text font-semibold text-gray-700">
@@ -35,11 +53,12 @@ const Signin = () => {
             </label>
             <input
               type="email"
+              name="email"
               className="input input-bordered w-full"
               placeholder="you@example.com"
-              value={email}
+              value={form.email}
               required
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleChange}
             />
           </div>
 
@@ -51,11 +70,12 @@ const Signin = () => {
             </label>
             <input
               type="password"
+              name="password"
               className="input input-bordered w-full"
               placeholder="••••••••"
-              value={password}
+              value={form.password}
               required
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleChange}
             />
             <a
               href="/forgot-password"
