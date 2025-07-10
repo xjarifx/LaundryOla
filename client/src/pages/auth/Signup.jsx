@@ -9,6 +9,7 @@ const Signup = () => {
     role: "",
     email: "",
     password: "",
+    address: "", // Add address field
   });
   const [error, setError] = useState("");
 
@@ -19,11 +20,26 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
+    
+    // Create the payload - only include address if role is customer
+    const payload = {
+      name: form.name,
+      phone: form.phone,
+      role: form.role,
+      email: form.email,
+      password: form.password,
+    };
+
+    // Only add address for customers
+    if (form.role === "customer") {
+      payload.address = form.address;
+    }
+
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (data.success) {
@@ -108,6 +124,30 @@ const Signup = () => {
             </select>
           </div>
 
+          {/* Address - Only show for customers */}
+          {form.role === "customer" && (
+            <div className="form-control flex flex-col">
+              <label className="label">
+                <span className="label-text font-semibold text-gray-700">
+                  Address
+                </span>
+              </label>
+              <textarea
+                name="address"
+                placeholder="Your complete address (House/Flat, Road, Area, City)"
+                className="textarea textarea-bordered h-20 w-full resize-none"
+                value={form.address}
+                required={form.role === "customer"}
+                onChange={handleChange}
+              />
+              <label className="label">
+                <span className="label-text-alt text-gray-500">
+                  This address will be used for pickup and delivery
+                </span>
+              </label>
+            </div>
+          )}
+
           {/* Email */}
           <div className="form-control flex flex-col">
             <label className="label">
@@ -142,17 +182,22 @@ const Signup = () => {
               required
               onChange={handleChange}
             />
+            <label className="label">
+              <span className="label-text-alt text-gray-500">
+                Must be at least 6 characters
+              </span>
+            </label>
           </div>
 
           <button type="submit" className="btn btn-primary mt-3 w-full">
-            Signup
+            Create Account
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link to="/signin" className="text-indigo-600 hover:underline">
-            Signin
+            Sign In
           </Link>
         </p>
       </div>

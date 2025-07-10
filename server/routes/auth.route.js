@@ -8,13 +8,29 @@ const router = express.Router();
 // POST /api/auth/register - User registration
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, phone, role = "customer" } = req.body;
+    const { name, email, password, phone, role, address } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password || !phone || !role) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
+      });
+    }
+
+    // Validate address for customers
+    if (role === "customer" && !address) {
+      return res.status(400).json({
+        success: false,
+        message: "Address is required for customers",
+      });
+    }
+
+    // Validate role
+    if (!["customer", "admin", "delivery"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role",
       });
     }
 
@@ -35,53 +51,38 @@ router.post("/register", async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert user (trigger will auto-generate role-based IDs)
+    // Insert user with address (null for non-customers)
     const [result] = await pool.execute(
-      "INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)",
-      [name, email, hashedPassword, phone, role]
+      "INSERT INTO users (name, email, password, phone, role, address) VALUES (?, ?, ?, ?, ?, ?)",
+      [name, email, hashedPassword, phone, role, role === "customer" ? address : null]
     );
-
-    // Get the created user with generated IDs
-    const [newUser] = await pool.execute(
-      "SELECT id, name, email, phone, role, customer_id, employee_id, agent_id FROM users WHERE id = ?",
-      [result.insertId]
-    );
-
-    const user = newUser[0];
 
     // Generate JWT token
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { userId: result.insertId, email, role },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
+    );
+
+    // Get the created user (without password)
+    const [users] = await pool.execute(
+      "SELECT id, name, email, phone, role, address FROM users WHERE id = ?",
+      [result.insertId]
     );
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          customerId: user.customer_id,
-          employeeId: user.employee_id,
-          agentId: user.agent_id,
-        },
         token,
+        user: users[0],
       },
     });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: "Registration failed",
+      message: "Failed to register user",
       error: error.message,
     });
   }
@@ -229,8 +230,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-
-// ...existing code...
 
 // // PUT /api/auth/profile - Update user profile
 // router.put("/profile", authenticateToken, async (req, res) => {
