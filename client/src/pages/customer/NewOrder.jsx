@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const NewOrder = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   
   // Add services state
   const [services, setServices] = useState([]);
@@ -11,14 +12,11 @@ const NewOrder = () => {
   // State for selected services
   const [selectedServices, setSelectedServices] = useState([]);
   
-  // State for order form
+  // Simplified order form - remove user credentials
   const [orderForm, setOrderForm] = useState({
     pickupDate: '',
     pickupTime: '',
-    address: '',
     instructions: '',
-    customerName: '',
-    phone: ''
   });
 
   // State for form validation
@@ -71,14 +69,6 @@ const NewOrder = () => {
       newErrors.services = "Please select at least one service";
     }
 
-    if (!orderForm.customerName.trim()) {
-      newErrors.customerName = "Name is required";
-    }
-
-    if (!orderForm.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    }
-
     if (!orderForm.pickupDate) {
       newErrors.pickupDate = "Pickup date is required";
     } else {
@@ -95,15 +85,11 @@ const NewOrder = () => {
       newErrors.pickupTime = "Pickup time is required";
     }
 
-    if (!orderForm.address.trim()) {
-      newErrors.address = "Pickup address is required";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update handleOrderSubmit to use API
+  // Updated handleOrderSubmit - use user data from localStorage/token
   const handleOrderSubmit = async (e) => {
     e.preventDefault();
     
@@ -112,9 +98,10 @@ const NewOrder = () => {
     }
 
     const orderData = {
-      customerName: orderForm.customerName,
-      phone: orderForm.phone,
-      address: orderForm.address,
+      // Use authenticated user's data
+      customerName: user.name,
+      phone: user.phone,
+      address: user.address,
       pickupDate: orderForm.pickupDate,
       pickupTime: orderForm.pickupTime,
       instructions: orderForm.instructions,
@@ -123,10 +110,12 @@ const NewOrder = () => {
     };
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch('http://localhost:5000/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(orderData)
       });
@@ -135,7 +124,7 @@ const NewOrder = () => {
       
       if (data.success) {
         alert(`Order placed successfully! Order ID: ${data.data.orderId}`);
-        navigate("/customer/dashboard");
+        navigate("/customer/orders");
       } else {
         alert('Failed to place order: ' + data.message);
       }
@@ -278,13 +267,6 @@ const NewOrder = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </button>
-
-                        {/* Cost Display */}
-                        {getServiceQuantity(service.id) > 0 && (
-                          <span className="text-sm font-semibold text-green-600 ml-2">
-                            = ৳{(service.price * getServiceQuantity(service.id)).toFixed(0)}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -293,14 +275,14 @@ const NewOrder = () => {
             </div>
           </div>
 
-          {/* Order Summary - Only show if services selected */}
+          {/* Selected Services Summary */}
           {selectedServices.length > 0 && (
             <div className="card bg-white shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4">Order Summary</h2>
                 <div className="space-y-3">
                   {selectedServices.map((service, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
                         <span className="font-medium">{service.name}</span>
                         <span className="text-sm text-gray-500 ml-2">
@@ -321,49 +303,37 @@ const NewOrder = () => {
             </div>
           )}
 
-          {/* Pickup Details Form */}
+          {/* Pickup Details Form - Simplified */}
           <div className="card bg-white shadow-lg">
             <div className="card-body">
               <h2 className="card-title text-xl mb-6">Pickup Details</h2>
               
               <form onSubmit={handleOrderSubmit} className="space-y-6">
-                {/* Customer Info */}
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Full Name *</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      className={`input input-bordered ${errors.customerName ? 'input-error' : ''}`}
-                      placeholder="Your full name"
-                      value={orderForm.customerName}
-                      onChange={(e) => setOrderForm({...orderForm, customerName: e.target.value})}
-                    />
-                    {errors.customerName && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">{errors.customerName}</span>
-                      </label>
-                    )}
+                {/* Customer Info Display (Read-only) */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3">Order for:</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Name:</span> {user.name || 'N/A'}
+                    </div>
+                    <div>
+                      <span className="font-medium">Phone:</span> {user.phone || 'N/A'}
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium">Address:</span> {user.address || 'Please update your address in profile'}
+                    </div>
                   </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Phone Number *</span>
-                    </label>
-                    <input 
-                      type="tel" 
-                      className={`input input-bordered ${errors.phone ? 'input-error' : ''}`}
-                      placeholder="+8801XXXXXXXXX"
-                      value={orderForm.phone}
-                      onChange={(e) => setOrderForm({...orderForm, phone: e.target.value})}
-                    />
-                    {errors.phone && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">{errors.phone}</span>
-                      </label>
-                    )}
-                  </div>
+                  {!user.address && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate("/customer/profile")}
+                        className="btn btn-sm btn-outline btn-primary"
+                      >
+                        Update Address in Profile
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pickup Date & Time */}
@@ -408,24 +378,6 @@ const NewOrder = () => {
                     )}
                   </div>
                 </div>
-                
-                {/* Address */}
-                <div className="form-control flex flex-col">
-                  <label className="label">
-                    <span className="label-text font-medium">Pickup Address *</span>
-                  </label>
-                  <textarea 
-                    className={`textarea textarea-bordered h-24 ${errors.address ? 'textarea-error' : ''}`}
-                    placeholder="Enter your complete pickup address with landmarks"
-                    value={orderForm.address}
-                    onChange={(e) => setOrderForm({...orderForm, address: e.target.value})}
-                  ></textarea>
-                  {errors.address && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">{errors.address}</span>
-                    </label>
-                  )}
-                </div>
 
                 {/* Special Instructions */}
                 <div className="form-control flex flex-col">
@@ -452,9 +404,9 @@ const NewOrder = () => {
                   <button 
                     type="submit" 
                     className="btn btn-primary flex-1"
-                    disabled={selectedServices.length === 0}
+                    disabled={selectedServices.length === 0 || !user.address}
                   >
-                    Place Order - ৳{getOrderTotal().toFixed(0)}
+                    {!user.address ? 'Add Address First' : `Place Order - ৳${getOrderTotal().toFixed(0)}`}
                   </button>
                 </div>
               </form>

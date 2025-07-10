@@ -7,7 +7,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Fetch orders from API
+  // Fetch orders from API with authentication
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -15,13 +15,33 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/orders");
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch("http://localhost:5000/api/orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await response.json();
 
       if (data.success) {
         setOrders(data.data);
+        console.log("Orders fetched successfully:", data.data);
       } else {
         console.error("Failed to fetch orders:", data.message);
+        if (
+          data.message.includes("token") ||
+          data.message.includes("authentication")
+        ) {
+          navigate("/login");
+        }
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
