@@ -73,7 +73,7 @@ const Signup = () => {
     {
       value: "delivery",
       label: "Delivery Agent",
-      description: "Handle pickups & deliveries",
+      description: "Pickup & delivery tasks",
       icon: "🚚",
       color: "from-green-500 to-green-600",
     },
