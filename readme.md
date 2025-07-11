@@ -8,8 +8,7 @@
 
 LaundryOla is a full-featured laundry service platform built with React (Vite) for the frontend and Express/MySQL for the backend. It supports customer order placement, delivery agent task management, and admin service control, all with a beautiful, modern UI.
 
-**Live Demo:** [https://laundryola.vercel.app](https://laundryola.vercel.app)
-
+**Live Demo:** [https://laundry-ola-three.vercel.app] (https://laundry-ola-three.vercel.app)
 ---
 
 ## ✨ Features
