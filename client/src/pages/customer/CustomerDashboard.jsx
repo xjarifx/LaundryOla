@@ -209,7 +209,7 @@ const CustomerDashboard = () => {
         </div>
       </header>
 
-      <div className="relative z-10 container mx-auto px-6 py-8">
+      <div className="relative container mx-auto px-6 py-8">
         <div className="space-y-8">
           {/* Welcome Section */}
           <div className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-lg">

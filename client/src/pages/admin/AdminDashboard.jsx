@@ -252,7 +252,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <div className="relative z-10 container mx-auto px-6 py-8">
+      <div className="relative container mx-auto px-6 py-8">
         <div className="space-y-8">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
