@@ -560,7 +560,7 @@ const AdminDashboard = () => {
 
                               {/* Dropdown Menu */}
                               {openDropdown === order.id && (
-                                <div className="absolute top-full right-0 z-[9999] mt-2 w-56 rounded-2xl border border-white/20 bg-white p-2 shadow-2xl backdrop-blur-lg">
+                                <div className="absolute top-full right-0 z-[10] mt-2 w-56 rounded-2xl border border-white/20 bg-white p-2 shadow-2xl backdrop-blur-lg">
                                   <button
                                     onClick={() =>
                                       handleStatusChange(order.id, "Pending")
