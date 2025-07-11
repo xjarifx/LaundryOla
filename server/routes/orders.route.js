@@ -381,6 +381,7 @@ router.get(
           o.created_at as createdAt
         FROM orders o 
         WHERE o.status IN ('Pending', 'Ready for Delivery')
+        AND o.delivery_agent_id IS NULL
         ORDER BY o.created_at DESC`
       );
 
@@ -529,7 +530,8 @@ router.patch(
       if (orders.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "Order not found or you don't have permission to cancel this order",
+          message:
+            "Order not found or you don't have permission to cancel this order",
         });
       }
 
@@ -631,7 +633,8 @@ router.patch(
 
       res.json({
         success: true,
-        message: "Order released successfully. Other delivery agents can now accept it.",
+        message:
+          "Order released successfully. Other delivery agents can now accept it.",
         data: { orderId },
       });
     } catch (error) {
@@ -639,6 +642,54 @@ router.patch(
       res.status(500).json({
         success: false,
         message: "Failed to release order",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// GET /api/orders/my-deliveries - Get orders assigned to current delivery agent
+router.get(
+  "/my-deliveries",
+  authenticateToken,
+  authorizeRole("delivery"),
+  async (req, res) => {
+    try {
+      const deliveryAgentId = req.user.userId;
+
+      const [orders] = await pool.execute(
+        `SELECT 
+          o.order_id as id,
+          o.customer_name as customerName,
+          o.customer_phone as customerPhone,
+          o.pickup_address as address,
+          o.status,
+          o.total_amount as total,
+          o.pickup_date as pickupDate,
+          o.delivery_date as deliveryDate,
+          o.accepted_at as acceptedAt,
+          o.special_instructions as instructions
+        FROM orders o
+        WHERE o.delivery_agent_id = ? 
+        ORDER BY o.accepted_at DESC`,
+        [deliveryAgentId]
+      );
+
+      // Convert total to number for each order
+      const ordersWithNumericTotal = orders.map((order) => ({
+        ...order,
+        total: parseFloat(order.total),
+      }));
+
+      res.json({
+        success: true,
+        data: ordersWithNumericTotal,
+      });
+    } catch (error) {
+      console.error("Error fetching my delivery orders:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch assigned orders",
         error: error.message,
       });
     }
