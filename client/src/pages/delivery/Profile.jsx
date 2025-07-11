@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
+import API_BASE_URL from "../../config/api.js";
 
-const DeliveryProfile = () => {
+const Profile = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-
+  const [loading, setLoading] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
     name: user.name || "Delivery Agent",
@@ -24,7 +24,7 @@ const DeliveryProfile = () => {
   });
 
   const handleEditProfile = () => setIsEditingProfile(true);
-  
+
   const handleCancelProfileEdit = () => {
     setIsEditingProfile(false);
     setProfileData({
@@ -38,10 +38,10 @@ const DeliveryProfile = () => {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/profile", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -56,11 +56,11 @@ const DeliveryProfile = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         const updatedUser = { ...user, ...profileData };
         localStorage.setItem("user", JSON.stringify(updatedUser));
-        
+
         setIsEditingProfile(false);
         alert("Profile updated successfully!");
       } else {
@@ -79,7 +79,7 @@ const DeliveryProfile = () => {
   };
 
   const handleChangePassword = () => setIsChangingPassword(true);
-  
+
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setPasswordData({
@@ -91,22 +91,22 @@ const DeliveryProfile = () => {
 
   const handleSavePassword = async (e) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("New passwords don't match!");
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
       alert("Password must be at least 6 characters long!");
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/change-password", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +119,7 @@ const DeliveryProfile = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setIsChangingPassword(false);
         setPasswordData({
@@ -157,15 +157,18 @@ const DeliveryProfile = () => {
     ) {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/api/auth/delete-account", {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const response = await fetch(
+          "http://localhost:5000/api/auth/delete-account",
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         const data = await response.json();
-        
+
         if (data.success) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -571,4 +574,4 @@ const DeliveryProfile = () => {
   );
 };
 
-export default DeliveryProfile;
+export default Profile;

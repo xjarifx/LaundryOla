@@ -112,20 +112,17 @@ const CustomerProfile = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/change-password`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            currentPassword: passwordData.currentPassword,
-            newPassword: passwordData.newPassword,
-          }),
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
 
       const data = await response.json();
 
@@ -461,7 +458,8 @@ const CustomerProfile = () => {
                       ) : (
                         "Update Password"
                       )}
-                    </div>
+                    </button>
+                  </div>
                 )}
               </div>
 

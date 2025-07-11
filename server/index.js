@@ -12,14 +12,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enhanced CORS configuration
+// Dynamic CORS configuration based on environment
+const corsOrigins =
+  process.env.NODE_ENV === "production"
+    ? [process.env.CLIENT_URL, "https://laundry-ola-three.vercel.app"]
+    : [
+        process.env.CLIENT_URL || "http://localhost:5173",
+        "http://localhost:5173",
+        "http://localhost:3000", // Additional development ports
+      ];
+
+console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+console.log(`🔗 CORS Origins: ${corsOrigins.join(", ")}`);
+
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL,
-      "http://localhost:5173",
-      "https://laundry-ola-three.vercel.app",
-    ],
+    origin: corsOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -34,12 +42,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/orders", ordersRoutes);
 
-// Basic route
+// Basic route with environment info
 app.get("/", (req, res) => {
   res.json({
     message: "LaundryOla API is running!",
     version: "1.0.0",
+    environment: process.env.NODE_ENV,
     database: "Connected to Aiven MySQL",
+    clientUrl: process.env.CLIENT_URL,
     endpoints: [
       "GET /api/health",
       "POST /api/auth/register",
@@ -51,18 +61,22 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health check route
+// Health check route with environment details
 app.get("/api/health", async (req, res) => {
   try {
     const dbConnected = await testConnection();
     res.json({
       status: "healthy",
+      environment: process.env.NODE_ENV,
       database: dbConnected ? "connected" : "disconnected",
+      clientUrl: process.env.CLIENT_URL,
+      serverUrl: process.env.SERVER_URL,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       status: "unhealthy",
+      environment: process.env.NODE_ENV,
       database: "disconnected",
       error: error.message,
     });
@@ -74,6 +88,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     message: "Something went wrong!",
+    environment: process.env.NODE_ENV,
     error:
       process.env.NODE_ENV === "development"
         ? err.message
@@ -81,7 +96,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server with environment-aware logging
 const startServer = async () => {
   try {
     // Test database connection
@@ -95,8 +110,16 @@ const startServer = async () => {
     // Start listening
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 API URL: http://localhost:${PORT}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+      console.log(
+        `🌐 API URL: ${process.env.SERVER_URL || `http://localhost:${PORT}`}`
+      );
+      console.log(
+        `🏥 Health check: ${
+          process.env.SERVER_URL || `http://localhost:${PORT}`
+        }/api/health`
+      );
+      console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
