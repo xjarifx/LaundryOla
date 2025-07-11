@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
 import API_BASE_URL from "../../config/api.js";
@@ -161,7 +161,7 @@ const AdminProfile = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:5000/api/auth/delete-account",
+          `${API_BASE_URL}/api/auth/delete-account`,
           {
             method: "DELETE",
             headers: {
@@ -188,18 +188,25 @@ const AdminProfile = () => {
   };
 
   return (
-    <div className="bg-base-200 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-purple-300 opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-indigo-300 opacity-20 blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-violet-300 opacity-10 blur-3xl"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      <header className="relative z-10 border-b border-white/20 bg-white/80 shadow-sm backdrop-blur-lg">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate("/admin/dashboard")}
-                className="btn btn-ghost btn-circle"
+                className="group rounded-xl p-2 transition-colors hover:bg-purple-100"
               >
                 <svg
-                  className="h-6 w-6"
+                  className="h-6 w-6 transform text-gray-600 transition-all group-hover:-translate-x-1 group-hover:text-purple-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -212,327 +219,56 @@ const AdminProfile = () => {
                   />
                 </svg>
               </button>
-              <h1 className="text-2xl font-bold text-indigo-700">My Profile</h1>
+              <div className="flex items-center space-x-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600">
+                  <svg
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                <h1 className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-2xl font-bold text-transparent">
+                  Admin Profile
+                </h1>
+              </div>
             </div>
-            <span className="text-sm text-gray-500">LaundryOla Admin</span>
+            <div className="flex items-center space-x-2">
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500">
+                Administrator
+              </span>
+              <span className="text-sm font-medium text-gray-700">
+                LaundryOla
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto max-w-4xl px-6 py-8">
         <div className="space-y-6">
-          {/* Profile Card */}
-          <div className="card bg-white shadow-lg">
-            <div className="card-body">
-              <div className="flex flex-col items-center space-y-4 md:flex-row md:space-y-0 md:space-x-6">
-                <div className="avatar">
-                  <div className="h-24 w-24 rounded-full bg-indigo-100 p-2">
-                    <img
-                      src={profileIcon}
-                      alt="Admin Profile"
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
+          {/* Profile Overview Card */}
+          <div className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-lg">
+            <div className="flex flex-col items-center space-y-6 md:flex-row md:space-y-0 md:space-x-8">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-purple-100 to-indigo-100 p-4 shadow-lg">
+                  <img
+                    src={profileIcon}
+                    alt="Admin Profile"
+                    className="h-full w-full object-contain drop-shadow-sm filter"
+                  />
                 </div>
-
-                <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    {profileData.name}
-                  </h2>
-                  <p className="text-gray-600">{profileData.email}</p>
-                  <p className="text-gray-600">{profileData.phone}</p>
-                  <div className="mt-2 flex flex-wrap justify-center gap-2 md:justify-start">
-                    <span className="badge badge-primary">Administrator</span>
-                    <span className="badge badge-outline">Active</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Personal Information */}
-          <div className="card bg-white shadow-lg">
-            <div className="card-body">
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="card-title text-xl">Personal Information</h3>
-                {!isEditingProfile ? (
-                  <button
-                    onClick={handleEditProfile}
-                    className="btn btn-primary btn-sm"
-                    disabled={loading}
-                  >
-                    <svg
-                      className="mr-2 h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button
-                      onClick={handleCancelProfileEdit}
-                      className="btn btn-outline btn-sm"
-                      disabled={loading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveProfile}
-                      className="btn btn-success btn-sm"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <span className="loading loading-spinner loading-xs"></span>
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <form onSubmit={handleSaveProfile} className="space-y-6">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">Full Name</span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={profileData.name}
-                        onChange={(e) =>
-                          handleProfileInputChange("name", e.target.value)
-                        }
-                        required
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.name}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Email Address
-                      </span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="email"
-                        className="input input-bordered"
-                        value={profileData.email}
-                        onChange={(e) =>
-                          handleProfileInputChange("email", e.target.value)
-                        }
-                        required
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.email}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Phone Number
-                      </span>
-                    </label>
-                    {isEditingProfile ? (
-                      <input
-                        type="tel"
-                        className="input input-bordered"
-                        value={profileData.phone}
-                        onChange={(e) =>
-                          handleProfileInputChange("phone", e.target.value)
-                        }
-                        required
-                      />
-                    ) : (
-                      <p className="rounded-lg bg-gray-50 px-4 py-3">
-                        {profileData.phone}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="form-control flex flex-col">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Employee ID
-                      </span>
-                    </label>
-                    <p className="rounded-lg bg-gray-50 px-4 py-3">
-                      {profileData.employeeId}
-                    </p>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Change Password */}
-          <div className="card bg-white shadow-lg">
-            <div className="card-body">
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="card-title text-xl">Change Password</h3>
-                {!isChangingPassword ? (
-                  <button
-                    onClick={handleChangePassword}
-                    className="btn btn-outline btn-sm"
-                    disabled={loading}
-                  >
-                    <svg
-                      className="mr-2 h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                    Change Password
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button
-                      onClick={handleCancelPasswordChange}
-                      className="btn btn-outline btn-sm"
-                      disabled={loading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSavePassword}
-                      className="btn btn-success btn-sm"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <span className="loading loading-spinner loading-xs"></span>
-                          Updating...
-                        </>
-                      ) : (
-                        "Update Password"
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {isChangingPassword && (
-                <form onSubmit={handleSavePassword} className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="form-control flex flex-col">
-                      <label className="label">
-                        <span className="label-text font-medium">
-                          Current Password *
-                        </span>
-                      </label>
-                      <input
-                        type="password"
-                        className="input input-bordered"
-                        placeholder="Enter current password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          handlePasswordInputChange(
-                            "currentPassword",
-                            e.target.value,
-                          )
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-control flex flex-col">
-                      <label className="label">
-                        <span className="label-text font-medium">
-                          New Password *
-                        </span>
-                      </label>
-                      <input
-                        type="password"
-                        className="input input-bordered"
-                        placeholder="Enter new password"
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          handlePasswordInputChange(
-                            "newPassword",
-                            e.target.value,
-                          )
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-control flex flex-col">
-                      <label className="label">
-                        <span className="label-text font-medium">
-                          Confirm Password *
-                        </span>
-                      </label>
-                      <input
-                        type="password"
-                        className="input input-bordered"
-                        placeholder="Confirm new password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) =>
-                          handlePasswordInputChange(
-                            "confirmPassword",
-                            e.target.value,
-                          )
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="text-sm text-gray-500">
-                    Password must be at least 6 characters long
-                  </div>
-                </form>
-              )}
-
-              {!isChangingPassword && (
-                <p className="text-gray-600">
-                  Click "Change Password" to update your account password
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Account Actions */}
-          <div className="card bg-white shadow-lg">
-            <div className="card-body">
-              <h3 className="card-title mb-6 text-xl">Account Actions</h3>
-
-              <div className="space-y-4">
-                <button
-                  onClick={handleLogout}
-                  className="btn btn-outline w-full justify-start"
-                >
+                <div className="absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-purple-500">
                   <svg
-                    className="mr-3 h-5 w-5"
+                    className="h-3 w-3 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -541,21 +277,87 @@ const AdminProfile = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                     />
                   </svg>
-                  Logout
-                </button>
+                </div>
+              </div>
 
-                <div className="divider"></div>
+              {/* Profile Info */}
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="mb-2 text-3xl font-bold text-gray-900">
+                  {profileData.name}
+                </h2>
+                <p className="mb-1 text-lg text-gray-600">
+                  {profileData.email}
+                </p>
+                <p className="mb-4 text-gray-500">{profileData.phone}</p>
 
+                <div className="flex flex-wrap justify-center gap-3 md:justify-start">
+                  <span className="flex items-center space-x-1 rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-800">
+                    <span>👑</span>
+                    <span>Administrator</span>
+                  </span>
+                  <span className="flex items-center space-x-1 rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-800">
+                    <span>🛡️</span>
+                    <span>Super User</span>
+                  </span>
+                  <span className="rounded-full bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-800">
+                    ID: {profileData.employeeId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 p-4">
+                  <div className="text-2xl font-bold text-purple-600">156</div>
+                  <div className="text-xs text-purple-700">Total Orders</div>
+                </div>
+                <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 p-4">
+                  <div className="text-2xl font-bold text-indigo-600">12</div>
+                  <div className="text-xs text-indigo-700">Users</div>
+                </div>
+                <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 p-4">
+                  <div className="text-2xl font-bold text-violet-600">3</div>
+                  <div className="text-xs text-violet-700">Years</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Personal Information Card */}
+          <div className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-lg">
+            <div className="mb-8 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500">
+                  <svg
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Personal Information
+                </h3>
+              </div>
+
+              {!isEditingProfile ? (
                 <button
-                  onClick={handleDeleteAccount}
-                  className="btn btn-error btn-outline w-full justify-start"
+                  onClick={handleEditProfile}
+                  className="flex transform items-center space-x-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/25"
                   disabled={loading}
                 >
                   <svg
-                    className="mr-3 h-5 w-5"
+                    className="h-4 w-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -564,11 +366,532 @@ const AdminProfile = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                     />
                   </svg>
-                  Delete Account
+                  <span>Edit Profile</span>
                 </button>
+              ) : (
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCancelProfileEdit}
+                    className="rounded-xl border-2 border-gray-300 px-6 py-3 font-semibold text-gray-700 transition-all duration-300 hover:bg-gray-50"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    className="flex transform items-center space-x-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/25"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <span>Full Name</span>
+                  </label>
+                  {isEditingProfile ? (
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      value={profileData.name}
+                      onChange={(e) =>
+                        handleProfileInputChange("name", e.target.value)
+                      }
+                      required
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3">
+                      <span className="font-medium text-gray-900">
+                        {profileData.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                      />
+                    </svg>
+                    <span>Email Address</span>
+                  </label>
+                  {isEditingProfile ? (
+                    <input
+                      type="email"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      value={profileData.email}
+                      onChange={(e) =>
+                        handleProfileInputChange("email", e.target.value)
+                      }
+                      required
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3">
+                      <span className="font-medium text-gray-900">
+                        {profileData.email}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
+                    <span>Phone Number</span>
+                  </label>
+                  {isEditingProfile ? (
+                    <input
+                      type="tel"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      value={profileData.phone}
+                      onChange={(e) =>
+                        handleProfileInputChange("phone", e.target.value)
+                      }
+                      required
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3">
+                      <span className="font-medium text-gray-900">
+                        {profileData.phone}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Employee ID */}
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
+                      />
+                    </svg>
+                    <span>Employee ID</span>
+                  </label>
+                  <div className="rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-indigo-100 px-4 py-3">
+                    <span className="font-bold text-indigo-900">
+                      {profileData.employeeId}
+                    </span>
+                    <span className="ml-2 text-xs text-indigo-600">
+                      (Read-only)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Security Section */}
+          <div className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-lg">
+            <div className="mb-8 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-pink-500">
+                  <svg
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Security Settings
+                </h3>
+              </div>
+
+              {!isChangingPassword ? (
+                <button
+                  onClick={handleChangePassword}
+                  className="flex transform items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/25"
+                  disabled={loading}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                  <span>Change Password</span>
+                </button>
+              ) : (
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCancelPasswordChange}
+                    className="rounded-xl border-2 border-gray-300 px-6 py-3 font-semibold text-gray-700 transition-all duration-300 hover:bg-gray-50"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSavePassword}
+                    className="flex transform items-center space-x-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/25"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span>Update Password</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isChangingPassword ? (
+              <form onSubmit={handleSavePassword} className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-3">
+                  {/* Current Password */}
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <span>Current Password *</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      placeholder="Enter current password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) =>
+                        handlePasswordInputChange(
+                          "currentPassword",
+                          e.target.value,
+                        )
+                      }
+                      required
+                    />
+                  </div>
+
+                  {/* New Password */}
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                      <span>New Password *</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      placeholder="Enter new password"
+                      value={passwordData.newPassword}
+                      onChange={(e) =>
+                        handlePasswordInputChange("newPassword", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>Confirm Password *</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
+                      placeholder="Confirm new password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) =>
+                        handlePasswordInputChange(
+                          "confirmPassword",
+                          e.target.value,
+                        )
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 rounded-xl border border-purple-200 bg-purple-50 p-4 text-sm text-gray-600">
+                  <svg
+                    className="h-4 w-4 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span>
+                    Password must be at least 6 characters long and contain a
+                    mix of letters and numbers for better security.
+                  </span>
+                </div>
+              </form>
+            ) : (
+              <div className="py-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-indigo-100">
+                  <svg
+                    className="h-8 w-8 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                </div>
+                <h4 className="mb-2 text-lg font-semibold text-gray-900">
+                  Your Account is Secure
+                </h4>
+                <p className="text-gray-600">
+                  Click "Change Password" to update your account security
+                  credentials.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Account Actions */}
+          <div className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-lg">
+            <div className="mb-8 flex items-center space-x-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-gray-600 to-gray-700">
+                <svg
+                  className="h-5 w-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                Account Actions
+              </h3>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex transform items-center justify-center space-x-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 p-4 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/25"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                <span>Sign Out</span>
+              </button>
+
+              {/* Delete Account Button */}
+              <button
+                onClick={handleDeleteAccount}
+                className="flex transform items-center justify-center space-x-3 rounded-2xl bg-gradient-to-r from-red-600 to-pink-600 p-4 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/25"
+                disabled={loading}
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                <span>Delete Account</span>
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start space-x-3">
+                <svg
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.348 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+                <div>
+                  <h4 className="mb-1 font-semibold text-amber-800">
+                    ⚠️ Admin Account Deletion Warning
+                  </h4>
+                  <p className="text-sm text-amber-700">
+                    Deleting the admin account is{" "}
+                    <strong>extremely dangerous</strong> and will remove all
+                    administrative access to the system. This action cannot be
+                    undone and may affect system operations.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
