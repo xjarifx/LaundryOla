@@ -185,7 +185,7 @@ const AdminDashboard = () => {
                   {user.email || "admin@laundryola.com"}
                 </p>
               </div>
-              <div className="relative">
+              <div className="relative z-[9999]">
                 <div className="dropdown dropdown-end">
                   <div
                     tabIndex={0}
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu mt-2 w-52 rounded-2xl border border-white/20 bg-white/90 p-2 shadow-2xl backdrop-blur-lg"
+                    className="dropdown-content menu z-[99999] mt-2 w-52 rounded-2xl border border-white/20 bg-white/90 p-2 shadow-2xl backdrop-blur-lg"
                   >
                     <li>
                       <button
