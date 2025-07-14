@@ -26,9 +26,10 @@ const Signin = () => {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem("token", data.data.token);
-        localStorage.setItem("user", JSON.stringify(data.data.user));
-        const role = data.data.user.role;
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+        setUser(data.user); // (from AuthContext)
+        const role = data.user.role;
 
         if (role === "admin") navigate("/admin/dashboard");
         else if (role === "delivery") navigate("/delivery/dashboard");

@@ -27,10 +27,8 @@ console.log(`🔗 CORS Origins: ${corsOrigins.join(", ")}`);
 
 app.use(
   cors({
-    origin: corsOrigins,
+    origin: "https://laundry-ola-three.vercel.app",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
