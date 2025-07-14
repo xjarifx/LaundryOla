@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Landing from "./pages/auth/Landing";
 import Signin from "./pages/auth/Signin";
@@ -15,6 +16,16 @@ import ProtectedRoute from "./components/ProtectedRoute";
 document.documentElement.setAttribute("data-theme", "light");
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // On mount, rehydrate user from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   return (
     <Routes>
       {/* Public Routes */}
