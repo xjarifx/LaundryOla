@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API_BASE_URL from "../../config/api.js";
+import { AuthContext } from "../../App";
 
 const Signin = () => {
   const navigate = useNavigate();
+  const { setUser } = useContext(AuthContext);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,23 +16,31 @@ const Signin = () => {
 
   const handleSignin = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
+
+    const { email, password } = form;
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
 
+      const data = await response.json();
       if (data.success) {
+        // Save to localStorage FIRST
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
-        setUser(data.user); // (from AuthContext)
-        const role = data.user.role;
 
+        // Then update context
+        setUser(data.user);
+
+        // Navigate based on role
+        const role = data.user.role;
         if (role === "admin") navigate("/admin/dashboard");
         else if (role === "delivery") navigate("/delivery/dashboard");
         else navigate("/customer/dashboard");

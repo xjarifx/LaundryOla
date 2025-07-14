@@ -27,7 +27,7 @@ console.log(`🔗 CORS Origins: ${corsOrigins.join(", ")}`);
 
 app.use(
   cors({
-    origin: "https://laundry-ola-three.vercel.app",
+    origin: ["http://localhost:5173", "https://laundry-ola-three.vercel.app"],
     credentials: true,
   })
 );

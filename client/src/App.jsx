@@ -22,8 +22,15 @@ function App() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const storedToken = localStorage.getItem("token");
+
+    console.log("App loading - storedUser:", storedUser);
+    console.log("App loading - storedToken:", storedToken);
+
+    if (storedUser && storedToken) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      console.log("User set from localStorage:", parsedUser);
     }
   }, []);
 
