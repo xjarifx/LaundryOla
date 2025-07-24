@@ -64,13 +64,19 @@ const NewOrder = () => {
 
   // Initialize customer info when user data is available
   useEffect(() => {
-    setOrderForm((prev) => ({
-      ...prev,
-      customerName: user.name || "",
-      customerPhone: user.phone || "",
-      customerAddress: user.address || "",
-    }));
-  }, [user]);
+    // Only set initial values if all fields are empty
+    setOrderForm((prev) => {
+      if (!prev.customerName && !prev.customerPhone && !prev.customerAddress) {
+        return {
+          ...prev,
+          customerName: user.name || "",
+          customerPhone: user.phone || "",
+          customerAddress: user.address || "",
+        };
+      }
+      return prev;
+    });
+  }, []); // <-- Remove [user], run only once on mount
 
   // Fetch services
   useEffect(() => {
@@ -270,9 +276,9 @@ const NewOrder = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-blue-300 opacity-20 blur-3xl"></div>
+        <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-blue-300 opacity-20 blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-indigo-300 opacity-20 blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-cyan-300 opacity-10 blur-3xl"></div>
+        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-cyan-300 opacity-10 blur-3xl"></div>
       </div>
 
       {/* Header */}
@@ -334,7 +340,7 @@ const NewOrder = () => {
         </div>
       </header>
 
-      <div className="relative z-10 container mx-auto px-6 py-8">
+      <div className="container relative z-10 mx-auto px-6 py-8">
         <div className="space-y-8">
           {/* Progress Indicator */}
           <div className="rounded-3xl border border-white/20 bg-white/80 p-6 shadow-2xl backdrop-blur-lg">
@@ -666,12 +672,6 @@ const NewOrder = () => {
                       </label>
                       <input
                         type="text"
-                        className={`w-full rounded-lg border px-4 py-3 transition-colors ${
-                          errors.customerName
-                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
-                        }`}
-                        placeholder="Enter customer name"
                         value={orderForm.customerName}
                         onChange={(e) =>
                           setOrderForm({
@@ -679,6 +679,12 @@ const NewOrder = () => {
                             customerName: e.target.value,
                           })
                         }
+                        className={`w-full rounded-lg border px-4 py-3 transition-colors ${
+                          errors.customerName
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                        }`}
+                        placeholder="Enter customer name"
                       />
                       {errors.customerName && (
                         <p className="mt-1 text-sm text-red-600">
@@ -707,12 +713,6 @@ const NewOrder = () => {
                       </label>
                       <input
                         type="tel"
-                        className={`w-full rounded-lg border px-4 py-3 transition-colors ${
-                          errors.customerPhone
-                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
-                        }`}
-                        placeholder="Enter phone number"
                         value={orderForm.customerPhone}
                         onChange={(e) =>
                           setOrderForm({
@@ -720,6 +720,12 @@ const NewOrder = () => {
                             customerPhone: e.target.value,
                           })
                         }
+                        className={`w-full rounded-lg border px-4 py-3 transition-colors ${
+                          errors.customerPhone
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                        }`}
+                        placeholder="Enter phone number"
                       />
                       {errors.customerPhone && (
                         <p className="mt-1 text-sm text-red-600">
@@ -754,12 +760,6 @@ const NewOrder = () => {
                       </label>
                       <textarea
                         rows={3}
-                        className={`w-full resize-none rounded-lg border px-4 py-3 transition-colors ${
-                          errors.customerAddress
-                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
-                        }`}
-                        placeholder="Enter complete pickup address"
                         value={orderForm.customerAddress}
                         onChange={(e) =>
                           setOrderForm({
@@ -767,6 +767,12 @@ const NewOrder = () => {
                             customerAddress: e.target.value,
                           })
                         }
+                        className={`w-full resize-none rounded-lg border px-4 py-3 transition-colors ${
+                          errors.customerAddress
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                        }`}
+                        placeholder="Enter complete pickup address"
                       />
                       {errors.customerAddress && (
                         <p className="mt-1 text-sm text-red-600">
@@ -918,7 +924,7 @@ const NewOrder = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div className="animate-in slide-in-from-right fixed top-4 right-4 z-50 duration-300">
+        <div className="animate-in slide-in-from-right fixed right-4 top-4 z-50 duration-300">
           <div
             className={`rounded-2xl border-0 p-4 shadow-2xl ${
               toast.type === "success"
