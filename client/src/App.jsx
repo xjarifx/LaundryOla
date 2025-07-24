@@ -27,10 +27,20 @@ function App() {
     console.log("App loading - storedUser:", storedUser);
     console.log("App loading - storedToken:", storedToken);
 
-    if (storedUser && storedToken) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      console.log("User set from localStorage:", parsedUser);
+    if (
+      storedUser &&
+      storedUser !== "undefined" &&
+      storedUser !== "null" &&
+      storedUser.trim() !== "" &&
+      storedToken
+    ) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        console.log("User set from localStorage:", parsedUser);
+      } catch (e) {
+        console.error("Failed to parse storedUser:", e);
+      }
     }
   }, []);
 
