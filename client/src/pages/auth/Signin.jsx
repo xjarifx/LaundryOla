@@ -30,17 +30,22 @@ const Signin = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        // Save to localStorage FIRST
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("token", data.token);
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        setError("Unexpected server response. Please contact support.");
+        return;
+      }
 
-        // Then update context
-        setUser(data.user);
+      if (response.ok && data.success) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+        localStorage.setItem("token", data.data.token);
+        setUser(data.data.user);
 
-        // Navigate based on role
-        const role = data.user.role;
+        const role = data.data.user.role;
         if (role === "admin") navigate("/admin/dashboard");
         else if (role === "delivery") navigate("/delivery/dashboard");
         else navigate("/customer/dashboard");
@@ -58,9 +63,9 @@ const Signin = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-4">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-blue-300 opacity-20 blur-3xl"></div>
+        <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-blue-300 opacity-20 blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-indigo-300 opacity-20 blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-purple-300 opacity-10 blur-3xl"></div>
+        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-purple-300 opacity-10 blur-3xl"></div>
       </div>
 
       <div className="relative w-full max-w-md">
@@ -161,7 +166,7 @@ const Signin = () => {
                   type="email"
                   name="email"
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   value={form.email}
                   required
                   onChange={handleChange}
@@ -192,7 +197,7 @@ const Signin = () => {
                   type="password"
                   name="password"
                   placeholder="Enter your password"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all duration-300 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   value={form.password}
                   required
                   onChange={handleChange}
