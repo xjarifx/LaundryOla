@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import profileIcon from "/profileIcon.png";
 import API_BASE_URL from "../../config/api.js";
@@ -12,6 +12,8 @@ const AdminDashboard = () => {
 
   // Add state for dropdown management
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRefs = useRef({});
 
   // Fetch orders from database on component mount
   useEffect(() => {
@@ -455,11 +457,9 @@ const AdminDashboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-gray-200">
-                <div className="overflow-x-auto overflow-y-visible">
-                  {" "}
-                  {/* Added overflow-y-visible */}
-                  <table className="w-full">
+              <div className="relative">
+                <div className="overflow-x-auto rounded-2xl border border-gray-200">
+                  <table className="w-full relative">
                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
@@ -488,8 +488,8 @@ const AdminDashboard = () => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                      {orders.map((order) => (
+                    <tbody className="divide-y divide-gray-200 bg-white relative">
+                      {orders.map((order, index) => (
                         <tr
                           key={order.id}
                           className="transition-colors duration-200 hover:bg-gray-50"
@@ -532,14 +532,27 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            {/* Parent container with relative positioning */}
                             <div className="relative">
                               <button
+                                ref={(el) => (buttonRefs.current[order.id] = el)}
                                 className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setOpenDropdown(
-                                    openDropdown === order.id ? null : order.id,
-                                  );
+                                  
+                                  if (openDropdown === order.id) {
+                                    setOpenDropdown(null);
+                                  } else {
+                                    // Calculate position for fixed dropdown
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    // Position dropdown above the button
+                                    // Dropdown height is approximately 200px (4 items * ~48px each + padding)
+                                    setDropdownPosition({
+                                      top: rect.top - 200 - 4, // Position above button with 4px gap
+                                      left: rect.right - 224, // 224px = 14rem (w-56) - align to right edge of button
+                                    });
+                                    setOpenDropdown(order.id);
+                                  }
                                 }}
                               >
                                 <span>Update Status</span>
@@ -557,57 +570,6 @@ const AdminDashboard = () => {
                                   />
                                 </svg>
                               </button>
-
-                              {/* Dropdown Menu */}
-                              {openDropdown === order.id && (
-                                <div className="absolute top-full right-0 z-[10] mt-2 w-56 rounded-2xl border border-white/20 bg-white p-2 shadow-2xl backdrop-blur-lg">
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(order.id, "Pending")
-                                    }
-                                    className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-amber-50"
-                                  >
-                                    <span className="h-3 w-3 rounded-full bg-amber-500"></span>
-                                    <span>Pending</span>
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(
-                                        order.id,
-                                        "In Progress",
-                                      )
-                                    }
-                                    className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-blue-50"
-                                  >
-                                    <span className="h-3 w-3 rounded-full bg-blue-500"></span>
-                                    <span>In Progress</span>
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(
-                                        order.id,
-                                        "Ready for Delivery",
-                                      )
-                                    }
-                                    className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-green-50"
-                                  >
-                                    <span className="h-3 w-3 rounded-full bg-green-500"></span>
-                                    <span>Ready for Delivery</span>
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(order.id, "Completed")
-                                    }
-                                    className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-gray-50"
-                                  >
-                                    <span className="h-3 w-3 rounded-full bg-gray-500"></span>
-                                    <span>Completed</span>
-                                  </button>
-                                </div>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -620,6 +582,50 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Dropdown Menu - Rendered outside table with fixed positioning */}
+      {openDropdown && (
+        <div
+          className="fixed w-56 rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl z-[9999]"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => handleStatusChange(openDropdown, "Pending")}
+            className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-amber-50"
+          >
+            <span className="h-3 w-3 rounded-full bg-amber-500"></span>
+            <span>Pending</span>
+          </button>
+
+          <button
+            onClick={() => handleStatusChange(openDropdown, "In Progress")}
+            className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-blue-50"
+          >
+            <span className="h-3 w-3 rounded-full bg-blue-500"></span>
+            <span>In Progress</span>
+          </button>
+
+          <button
+            onClick={() => handleStatusChange(openDropdown, "Ready for Delivery")}
+            className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-green-50"
+          >
+            <span className="h-3 w-3 rounded-full bg-green-500"></span>
+            <span>Ready for Delivery</span>
+          </button>
+
+          <button
+            onClick={() => handleStatusChange(openDropdown, "Completed")}
+            className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 transition-colors hover:bg-gray-50"
+          >
+            <span className="h-3 w-3 rounded-full bg-gray-500"></span>
+            <span>Completed</span>
+          </button>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (

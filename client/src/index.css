@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles for dropdown menus */
+@layer utilities {
+  /* Ensure dropdowns in tables are visible */
+  .dropdown-container {
+    position: relative;
+  }
+  
+  /* Override any parent overflow constraints for dropdown visibility */
+  .table-with-dropdown {
+    overflow: visible !important;
+  }
+  
+  /* Ensure dropdown appears above everything */
+  .status-dropdown {
+    position: absolute;
+    z-index: 9999;
+  }
+  
+  /* Fix for table cell overflow */
+  td {
+    overflow: visible !important;
+  }
+  
+  /* Ensure table doesn't clip dropdowns */
+  table {
+    position: relative;
+    overflow: visible !important;
+  }
+}
