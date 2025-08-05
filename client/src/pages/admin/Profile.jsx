@@ -9,18 +9,7 @@ const AdminProfile = () => {
   // Custom quick stats and deletion warning for admin
   const quickStats = (
     <div className="grid grid-cols-3 gap-4 text-center">
-      <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 p-4">
-        <div className="text-2xl font-bold text-purple-600">156</div>
-        <div className="text-xs text-purple-700">Total Orders</div>
-      </div>
-      <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 p-4">
-        <div className="text-2xl font-bold text-indigo-600">12</div>
-        <div className="text-xs text-indigo-700">Users</div>
-      </div>
-      <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 p-4">
-        <div className="text-2xl font-bold text-violet-600">3</div>
-        <div className="text-xs text-violet-700">Years</div>
-      </div>
+      
     </div>
   );
   const deletionWarning = (

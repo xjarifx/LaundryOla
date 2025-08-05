@@ -30,8 +30,22 @@ router.post(
         total,
       } = req.body;
 
-      // Use authenticated user's ID instead of hardcoded customer_id
-      const customerId = req.user.userId;
+      // Get customer_id from customer_ids table using authenticated user's ID
+      const userId = req.user.userId;
+      const [customerRows] = await connection.execute(
+        "SELECT user_id FROM customer_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (customerRows.length === 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: "Customer ID not found. Please contact support.",
+        });
+      }
+
+      const customerId = customerRows[0].user_id;
 
       // Validate required fields
       if (
@@ -43,6 +57,7 @@ router.post(
         !services ||
         services.length === 0
       ) {
+        await connection.rollback();
         return res.status(400).json({
           success: false,
           message: "Missing required fields",
@@ -60,14 +75,12 @@ router.post(
       // Insert order
       const [orderResult] = await connection.execute(
         `INSERT INTO orders (
-          customer_id, customer_name, customer_phone, pickup_address, 
+          customer_id, pickup_address, 
           pickup_date, pickup_time, delivery_date, special_instructions, 
           total_amount, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customerId,
-          customerName,
-          phone,
           address,
           pickupDate,
           pickupTime,
@@ -136,8 +149,21 @@ router.get(
   authorizeRole("customer"),
   async (req, res) => {
     try {
-      // Use authenticated user's ID instead of hardcoded customer_id
-      const customerId = req.user.userId;
+      // Get customer_id from customer_ids table using authenticated user's ID
+      const userId = req.user.userId;
+      const [customerRows] = await pool.execute(
+        "SELECT user_id FROM customer_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (customerRows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Customer ID not found. Please contact support.",
+        });
+      }
+
+      const customerId = customerRows[0].user_id;
 
       const [orders] = await pool.execute(
         `SELECT 
@@ -205,7 +231,7 @@ router.patch(
       "In Progress",
       "Ready for Delivery",
       "Completed",
-      "Cancelled",
+      "Canceled",
     ];
 
     if (!allowedStatuses.includes(status)) {
@@ -271,7 +297,7 @@ router.put(
         "In Progress",
         "Ready for Delivery",
         "Completed",
-        "Cancelled",
+        "Canceled",
       ];
 
       if (!allowedStatuses.includes(status)) {
@@ -336,11 +362,13 @@ router.get(
     try {
       const [orders] = await pool.execute(
         `SELECT 
-          o.order_id as id, o.customer_name as customerName, 
-          o.customer_phone as customerPhone, o.status, 
+          o.order_id as id, u.name as customerName, 
+          u.phone as customerPhone, o.status, 
           o.pickup_date as pickupDate, o.delivery_date as deliveryDate, 
           o.total_amount as total, o.created_at as createdAt
         FROM orders o 
+        JOIN customer_ids c ON o.customer_id = c.user_id
+        JOIN users u ON c.user_id = u.id
         ORDER BY o.created_at DESC`
       );
 
@@ -374,12 +402,14 @@ router.get(
     try {
       const [orders] = await pool.execute(
         `SELECT 
-          o.order_id as id, o.customer_name as customerName, 
-          o.customer_phone as customerPhone, o.status, 
+          o.order_id as id, u.name as customerName, 
+          u.phone as customerPhone, o.status, 
           o.pickup_date as pickupDate, o.delivery_date as deliveryDate, 
           o.pickup_address as address, o.total_amount as total, 
           o.created_at as createdAt
         FROM orders o 
+        JOIN customer_ids c ON o.customer_id = c.user_id
+        JOIN users u ON c.user_id = u.id
         WHERE o.status IN ('Pending', 'Ready for Delivery')
         AND o.delivery_agent_id IS NULL
         ORDER BY o.created_at DESC`
@@ -413,9 +443,24 @@ router.patch(
   authorizeRole("delivery"),
   async (req, res) => {
     const { orderId } = req.params;
-    const deliveryAgentId = req.user.userId;
+    const userId = req.user.userId;
 
     try {
+      // Get agent_id from agent_ids table using authenticated user's ID
+      const [agentRows] = await pool.execute(
+        "SELECT user_id FROM agent_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (agentRows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Agent ID not found. Please contact support.",
+        });
+      }
+
+      const deliveryAgentId = agentRows[0].user_id;
+
       // Check if order exists and is available
       const [orders] = await pool.execute(
         "SELECT * FROM orders WHERE order_id = ? AND status IN ('Pending', 'Ready for Delivery')",
@@ -458,12 +503,28 @@ router.patch(
   authorizeRole("delivery"),
   async (req, res) => {
     const { orderId } = req.params;
-    const deliveryAgentId = req.user.userId;
+    const userId = req.user.userId;
 
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
+
+      // Get agent_id from agent_ids table using authenticated user's ID
+      const [agentRows] = await connection.execute(
+        "SELECT user_id FROM agent_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (agentRows.length === 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: "Agent ID not found. Please contact support.",
+        });
+      }
+
+      const deliveryAgentId = agentRows[0].user_id;
 
       // Check if order exists and is assigned to this delivery agent
       const [orders] = await connection.execute(
@@ -518,9 +579,24 @@ router.patch(
   authorizeRole("customer"),
   async (req, res) => {
     const { orderId } = req.params;
-    const customerId = req.user.userId;
+    const userId = req.user.userId;
 
     try {
+      // Get customer_id from customer_ids table using authenticated user's ID
+      const [customerRows] = await pool.execute(
+        "SELECT user_id FROM customer_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (customerRows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Customer ID not found. Please contact support.",
+        });
+      }
+
+      const customerId = customerRows[0].user_id;
+
       // Check if order exists and belongs to the customer
       const [orders] = await pool.execute(
         "SELECT * FROM orders WHERE order_id = ? AND customer_id = ?",
@@ -545,10 +621,10 @@ router.patch(
         });
       }
 
-      // Update order status to Cancelled
+      // Update order status to Canceled (matching new schema)
       const [result] = await pool.execute(
-        "UPDATE orders SET status = ?, cancelled_at = NOW() WHERE order_id = ? AND customer_id = ?",
-        ["Cancelled", orderId, customerId]
+        "UPDATE orders SET status = ?, canceled_at = NOW() WHERE order_id = ? AND customer_id = ?",
+        ["Canceled", orderId, customerId]
       );
 
       if (result.affectedRows === 0) {
@@ -560,7 +636,7 @@ router.patch(
 
       // Get updated order details
       const [updatedOrders] = await pool.execute(
-        "SELECT order_id, status, total_amount, pickup_date, delivery_date, cancelled_at FROM orders WHERE order_id = ?",
+        "SELECT order_id, status, total_amount, pickup_date, delivery_date, canceled_at FROM orders WHERE order_id = ?",
         [orderId]
       );
 
@@ -571,7 +647,7 @@ router.patch(
           orderId: updatedOrders[0].order_id,
           status: updatedOrders[0].status,
           total: parseFloat(updatedOrders[0].total_amount),
-          cancelledAt: updatedOrders[0].cancelled_at,
+          cancelledAt: updatedOrders[0].canceled_at,
         },
       });
     } catch (error) {
@@ -592,9 +668,24 @@ router.patch(
   authorizeRole("delivery"),
   async (req, res) => {
     const { orderId } = req.params;
-    const deliveryAgentId = req.user.userId;
+    const userId = req.user.userId;
 
     try {
+      // Get agent_id from agent_ids table using authenticated user's ID
+      const [agentRows] = await pool.execute(
+        "SELECT user_id FROM agent_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (agentRows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Agent ID not found. Please contact support.",
+        });
+      }
+
+      const deliveryAgentId = agentRows[0].user_id;
+
       // Check if order exists and is assigned to this delivery agent
       const [orders] = await pool.execute(
         "SELECT * FROM orders WHERE order_id = ? AND delivery_agent_id = ?",
@@ -655,13 +746,28 @@ router.get(
   authorizeRole("delivery"),
   async (req, res) => {
     try {
-      const deliveryAgentId = req.user.userId;
+      const userId = req.user.userId;
+
+      // Get agent_id from agent_ids table using authenticated user's ID
+      const [agentRows] = await pool.execute(
+        "SELECT user_id FROM agent_ids WHERE user_id = ?",
+        [userId]
+      );
+
+      if (agentRows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Agent ID not found. Please contact support.",
+        });
+      }
+
+      const deliveryAgentId = agentRows[0].user_id;
 
       const [orders] = await pool.execute(
         `SELECT 
           o.order_id as id,
-          o.customer_name as customerName,
-          o.customer_phone as customerPhone,
+          u.name as customerName,
+          u.phone as customerPhone,
           o.pickup_address as address,
           o.status,
           o.total_amount as total,
@@ -670,6 +776,8 @@ router.get(
           o.accepted_at as acceptedAt,
           o.special_instructions as instructions
         FROM orders o
+        JOIN customer_ids c ON o.customer_id = c.user_id
+        JOIN users u ON c.user_id = u.id
         WHERE o.delivery_agent_id = ? 
         ORDER BY o.accepted_at DESC`,
         [deliveryAgentId]

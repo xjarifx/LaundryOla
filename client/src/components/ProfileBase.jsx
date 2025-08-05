@@ -59,7 +59,9 @@ const ProfileBase = ({
       });
       const data = await response.json();
       if (data.success) {
-        const updatedUser = { ...user, ...profileData };
+        // Use the complete user object returned from the server
+        // This ensures we have all fields including IDs
+        const updatedUser = data.data;
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setIsEditingProfile(false);
         alert("Profile updated successfully!");

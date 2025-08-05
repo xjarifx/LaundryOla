@@ -6,8 +6,29 @@ import { authenticateToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
+// Helper function to generate unique IDs
+const generateUniqueId = (role) => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
+
+  switch (role) {
+    case "customer":
+      return `CUS${timestamp}${random}`;
+    case "admin":
+      return `EMP${timestamp}${random}`;
+    case "delivery":
+      return `AGT${timestamp}${random}`;
+    default:
+      return `USR${timestamp}${random}`;
+  }
+};
+
 // POST /api/auth/register - User registration
 router.post("/register", async (req, res) => {
+  const connection = await pool.getConnection();
+
   try {
     const { name, email, password, phone, role, address } = req.body;
 
@@ -35,13 +56,17 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    // Start transaction
+    await connection.beginTransaction();
+
     // Check if user already exists
-    const [existingUsers] = await pool.execute(
+    const [existingUsers] = await connection.execute(
       "SELECT id FROM users WHERE email = ?",
       [email]
     );
 
     if (existingUsers.length > 0) {
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: "User already exists with this email",
@@ -52,40 +77,97 @@ router.post("/register", async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert user with address (null for non-customers)
-    const [result] = await pool.execute(
+    // Insert user
+    const [result] = await connection.execute(
       "INSERT INTO users (name, email, password, phone, role, address) VALUES (?, ?, ?, ?, ?, ?)",
-      [name, email, hashedPassword, phone, role, role === "customer" ? address : null]
+      [
+        name,
+        email,
+        hashedPassword,
+        phone,
+        role,
+        role === "customer" ? address : null,
+      ]
     );
+
+    const userId = result.insertId;
+
+    // Generate and insert role-specific ID
+    const uniqueId = generateUniqueId(role);
+
+    if (role === "customer") {
+      await connection.execute(
+        "INSERT INTO customer_ids (user_id, customer_id) VALUES (?, ?)",
+        [userId, uniqueId]
+      );
+    } else if (role === "admin") {
+      await connection.execute(
+        "INSERT INTO employee_ids (user_id, employee_id) VALUES (?, ?)",
+        [userId, uniqueId]
+      );
+    } else if (role === "delivery") {
+      await connection.execute(
+        "INSERT INTO agent_ids (user_id, agent_id) VALUES (?, ?)",
+        [userId, uniqueId]
+      );
+    }
+
+    // Commit transaction
+    await connection.commit();
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: result.insertId, email, role },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    const token = jwt.sign({ userId, email, role }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
-    // Get the created user (without password)
-    const [users] = await pool.execute(
-      "SELECT id, name, email, phone, role, address FROM users WHERE id = ?",
-      [result.insertId]
-    );
+    // Get the created user with role-specific ID
+    let userQuery = `
+      SELECT u.id, u.name, u.email, u.phone, u.role, u.address
+    `;
+    let joinClause = "";
+
+    if (role === "customer") {
+      userQuery += ", c.customer_id";
+      joinClause = "LEFT JOIN customer_ids c ON u.id = c.user_id";
+    } else if (role === "admin") {
+      userQuery += ", e.employee_id";
+      joinClause = "LEFT JOIN employee_ids e ON u.id = e.user_id";
+    } else if (role === "delivery") {
+      userQuery += ", a.agent_id";
+      joinClause = "LEFT JOIN agent_ids a ON u.id = a.user_id";
+    }
+
+    userQuery += ` FROM users u ${joinClause} WHERE u.id = ?`;
+
+    const [users] = await connection.execute(userQuery, [userId]);
+
+    // Transform the user object to use camelCase for ID fields
+    const user = users[0];
+    const transformedUser = {
+      ...user,
+      customerId: user.customer_id,
+      employeeId: user.employee_id,
+      agentId: user.agent_id
+    };
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: {
         token,
-        user: users[0],
+        user: transformedUser,
       },
     });
   } catch (error) {
+    await connection.rollback();
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to register user",
       error: error.message,
     });
+  } finally {
+    connection.release();
   }
 });
 
@@ -102,9 +184,15 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Check if user exists
+    // Check if user exists with role-specific IDs
     const [users] = await pool.execute(
-      "SELECT id, name, email, password, phone, role, address FROM users WHERE email = ?",
+      `SELECT u.id, u.name, u.email, u.password, u.phone, u.role, u.address,
+              c.customer_id, e.employee_id, a.agent_id
+       FROM users u
+       LEFT JOIN customer_ids c ON u.id = c.user_id
+       LEFT JOIN employee_ids e ON u.id = e.user_id
+       LEFT JOIN agent_ids a ON u.id = a.user_id
+       WHERE u.email = ?`,
       [email]
     );
 
@@ -136,12 +224,20 @@ router.post("/login", async (req, res) => {
     // Remove password from user object
     const { password: _, ...userWithoutPassword } = user;
 
+    // Transform the user object to use camelCase for ID fields
+    const transformedUser = {
+      ...userWithoutPassword,
+      customerId: userWithoutPassword.customer_id,
+      employeeId: userWithoutPassword.employee_id,
+      agentId: userWithoutPassword.agent_id
+    };
+
     res.json({
       success: true,
       message: "Login successful",
       data: {
         token,
-        user: userWithoutPassword,
+        user: transformedUser,
       },
     });
   } catch (error) {
@@ -158,7 +254,13 @@ router.post("/login", async (req, res) => {
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      "SELECT id, name, email, phone, role, customer_id, employee_id, agent_id FROM users WHERE id = ?",
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.address,
+              c.customer_id, e.employee_id, a.agent_id
+       FROM users u
+       LEFT JOIN customer_ids c ON u.id = c.user_id
+       LEFT JOIN employee_ids e ON u.id = e.user_id
+       LEFT JOIN agent_ids a ON u.id = a.user_id
+       WHERE u.id = ?`,
       [req.user.userId]
     );
 
@@ -171,19 +273,23 @@ router.get("/me", authenticateToken, async (req, res) => {
 
     const user = users[0];
 
+    // Transform the user object to use camelCase for ID fields
+    const transformedUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      address: user.address,
+      customerId: user.customer_id,
+      employeeId: user.employee_id,
+      agentId: user.agent_id,
+    };
+
     res.json({
       success: true,
       data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          customerId: user.customer_id,
-          employeeId: user.employee_id,
-          agentId: user.agent_id,
-        },
+        user: transformedUser,
       },
     });
   } catch (error) {
@@ -215,16 +321,31 @@ router.put("/profile", authenticateToken, async (req, res) => {
       });
     }
 
-    // Get updated user data
+    // Get updated user data with role-specific IDs
     const [users] = await pool.execute(
-      "SELECT id, name, email, phone, role, address FROM users WHERE id = ?",
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.address,
+              c.customer_id, e.employee_id, a.agent_id
+       FROM users u
+       LEFT JOIN customer_ids c ON u.id = c.user_id
+       LEFT JOIN employee_ids e ON u.id = e.user_id
+       LEFT JOIN agent_ids a ON u.id = a.user_id
+       WHERE u.id = ?`,
       [userId]
     );
+
+    // Transform the user object to use camelCase for ID fields
+    const user = users[0];
+    const transformedUser = {
+      ...user,
+      customerId: user.customer_id,
+      employeeId: user.employee_id,
+      agentId: user.agent_id
+    };
 
     res.json({
       success: true,
       message: "Profile updated successfully",
-      data: users[0],
+      data: transformedUser,
     });
   } catch (error) {
     console.error("Profile update error:", error);
@@ -271,7 +392,10 @@ router.put("/change-password", authenticateToken, async (req, res) => {
     }
 
     // Verify current password
-    const isValidPassword = await bcrypt.compare(currentPassword, users[0].password);
+    const isValidPassword = await bcrypt.compare(
+      currentPassword,
+      users[0].password
+    );
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
@@ -315,11 +439,10 @@ router.delete("/delete-account", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Delete user account
-    const [result] = await pool.execute(
-      "DELETE FROM users WHERE id = ?",
-      [userId]
-    );
+    // Delete user account (CASCADE will handle related tables)
+    const [result] = await pool.execute("DELETE FROM users WHERE id = ?", [
+      userId,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({

@@ -7,7 +7,7 @@ const DeliveryProfile = () => {
   // Custom quick stats and deletion warning for delivery agent
   const quickStats = (
     <div className="grid grid-cols-3 gap-4 text-center">
-      <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-4">
+      {/* <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-4">
         <div className="text-2xl font-bold text-green-600">48</div>
         <div className="text-xs text-green-700">Deliveries</div>
       </div>
@@ -18,7 +18,7 @@ const DeliveryProfile = () => {
       <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 p-4">
         <div className="text-2xl font-bold text-orange-600">6</div>
         <div className="text-xs text-orange-700">Months</div>
-      </div>
+      </div> */}
     </div>
   );
   const deletionWarning = (
@@ -48,64 +48,8 @@ const DeliveryProfile = () => {
     </div>
   );
 
-  // Extra fields for delivery agent (vehicleType, licenseNumber)
-  const extraFields = ({
-    isEditingProfile,
-    profileData,
-    handleProfileInputChange,
-  }) => (
-    <>
-      <div className="space-y-2">
-        <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
-          <span>Vehicle Type</span>
-        </label>
-        {isEditingProfile ? (
-          <select
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:bg-white focus:ring-2 focus:ring-green-500/20"
-            value={profileData.vehicleType}
-            onChange={(e) =>
-              handleProfileInputChange("vehicleType", e.target.value)
-            }
-            required
-          >
-            <option value="Motorcycle">Motorcycle</option>
-            <option value="Bicycle">Bicycle</option>
-            <option value="Car">Car</option>
-            <option value="Van">Van</option>
-          </select>
-        ) : (
-          <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3">
-            <span className="font-medium text-gray-900">
-              {profileData.vehicleType}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="space-y-2">
-        <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
-          <span>License Number</span>
-        </label>
-        {isEditingProfile ? (
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:bg-white focus:ring-2 focus:ring-green-500/20"
-            value={profileData.licenseNumber}
-            onChange={(e) =>
-              handleProfileInputChange("licenseNumber", e.target.value)
-            }
-            placeholder="Enter driving license number"
-            required
-          />
-        ) : (
-          <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3">
-            <span className="font-medium text-gray-900">
-              {profileData.licenseNumber}
-            </span>
-          </div>
-        )}
-      </div>
-    </>
-  );
+  // Extra fields for delivery agent (none currently)
+  const extraFields = null;
 
   return (
     <ProfileBase
@@ -115,8 +59,6 @@ const DeliveryProfile = () => {
         "email",
         "phone",
         "agentId",
-        "vehicleType",
-        "licenseNumber",
       ]}
       readOnlyFields={["agentId"]}
       labels={{
@@ -124,8 +66,8 @@ const DeliveryProfile = () => {
         email: "Email Address",
         phone: "Phone Number",
         agentId: "Agent ID",
-        vehicleType: "Vehicle Type",
-        licenseNumber: "License Number",
+        // vehicleType: "Vehicle Type",
+        // licenseNumber: "License Number",
       }}
       roleLabel="Delivery Agent"
       dashboardPath="/delivery/dashboard"
