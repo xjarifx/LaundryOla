@@ -27,10 +27,60 @@ const ProfileBase = ({
 
   // Build initial profileData from fields
   const initialProfileData = {};
+  
+  // Debug logging for user object
+  console.log("User object:", user);
+  console.log("Fields to display:", fields);
+  console.log("Read-only fields:", readOnlyFields);
+  
+  // Check if ID fields exist in user object
+  if (user.customerId) console.log("customerId exists:", user.customerId);
+  if (user.employeeId) console.log("employeeId exists:", user.employeeId);
+  if (user.agentId) console.log("agentId exists:", user.agentId);
+  
+  // Also check snake_case versions
+  if (user.customer_id) console.log("customer_id exists:", user.customer_id);
+  if (user.employee_id) console.log("employee_id exists:", user.employee_id);
+  if (user.agent_id) console.log("agent_id exists:", user.agent_id);
+  
   fields.forEach((field) => {
-    initialProfileData[field] = user[field] || "";
+    // For ID fields, check both camelCase and snake_case versions
+    if (field === 'customerId' && !user[field] && user.customer_id) {
+      initialProfileData[field] = user.customer_id;
+    } else if (field === 'employeeId' && !user[field] && user.employee_id) {
+      initialProfileData[field] = user.employee_id;
+    } else if (field === 'agentId' && !user[field] && user.agent_id) {
+      initialProfileData[field] = user.agent_id;
+    } else {
+      initialProfileData[field] = user[field] || "";
+    }
+    console.log(`Setting field ${field} to value: ${initialProfileData[field]}`);
   });
+  
+  console.log("Initial profile data:", initialProfileData);
+  
   const [profileData, setProfileData] = useState(initialProfileData);
+
+  // Use useEffect to re-initialize profileData when user object changes
+  // This is crucial for when the user data is updated after a network request
+  React.useEffect(() => {
+    const newInitialData = {};
+    fields.forEach((field) => {
+      // Prioritize camelCase, fallback to snake_case
+      if (user[field]) {
+        newInitialData[field] = user[field];
+      } else if (field === 'customerId' && user.customer_id) {
+        newInitialData[field] = user.customer_id;
+      } else if (field === 'employeeId' && user.employee_id) {
+        newInitialData[field] = user.employee_id;
+      } else if (field === 'agentId' && user.agent_id) {
+        newInitialData[field] = user.agent_id;
+      } else {
+        newInitialData[field] = user[field] || "";
+      }
+    });
+    setProfileData(newInitialData);
+  }, [user, fields]);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -291,14 +341,19 @@ const ProfileBase = ({
                   >
                     <span>{roleLabel}</span>
                   </span>
-                  {readOnlyFields.map((field) => (
-                    <span
-                      key={field}
-                      className={`rounded-full ${idColor} px-4 py-2 text-sm font-semibold`}
-                    >
-                      ID: {profileData[field]}
-                    </span>
-                  ))}
+                  {readOnlyFields.map((field) => {
+                    const fieldLabel = labels[field] || field;
+                    const fieldValue = profileData[field];
+                    console.log(`Rendering ID field: ${field}, value: ${fieldValue}`);
+                    return (
+                      <span
+                        key={field}
+                        className={`rounded-full ${idColor} px-4 py-2 text-sm font-semibold`}
+                      >
+                        {fieldLabel}: {fieldValue || 'Not available'}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
               {/* Quick Stats (optional) */}

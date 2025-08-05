@@ -3,6 +3,11 @@ import ProfileBase from "../../components/ProfileBase.jsx";
 
 const CustomerProfile = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  console.log("Customer Profile - User from localStorage:", user);
+  console.log("Customer Profile - User ID fields:", {
+    customerId: user.customerId,
+    customer_id: user.customer_id
+  });
 
   // Custom quick stats and deletion warning for customer
   const quickStats = (

@@ -3,6 +3,11 @@ import ProfileBase from "../../components/ProfileBase.jsx";
 
 const DeliveryProfile = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  console.log("Delivery Profile - User from localStorage:", user);
+  console.log("Delivery Profile - User ID fields:", {
+    agentId: user.agentId,
+    agent_id: user.agent_id
+  });
 
   // Custom quick stats and deletion warning for delivery agent
   const quickStats = (
